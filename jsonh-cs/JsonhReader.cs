@@ -1,7 +1,7 @@
 ﻿using LinkDotNet.StringBuilder;
 using System.Text;
 using System.Text.Json;
-using ValueResults;
+using ResultZero;
 
 namespace Jsonh;
 
@@ -177,6 +177,6 @@ public sealed class JsonhReader : IDisposable {
 /// </summary>
 public readonly record struct JsonhToken(JsonhReader Reader, JsonTokenType Type, string Value = "");
 
-public struct JsonhOptions {
+public struct JsonhReaderOptions {
 
 }
