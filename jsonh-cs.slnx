@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/Solution Items/" Id="31cb8606-c6e6-4d70-a65b-892db35e3851">
+    <File Path="McKeemanSyntax.md" />
+  </Folder>
+  <Project Path="jsonh-cs/jsonh-cs.csproj" />
+</Solution>
