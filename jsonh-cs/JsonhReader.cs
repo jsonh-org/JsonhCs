@@ -3,13 +3,16 @@ using System.Text;
 using System.Text.Json;
 using ResultZero;
 
-namespace Jsonh;
+namespace JsonhCs;
 
 public sealed class JsonhReader : IDisposable {
     /// <summary>
     /// The text reader to read characters from.
     /// </summary>
     public TextReader TextReader { get; }
+
+    private const char LineSeparatorChar = '\u2028';
+    private const char ParagraphSeparatorChar = '\u2029';
 
     /// <summary>
     /// Constructs a reader that reads JSONH from a text reader.
@@ -46,9 +49,127 @@ public sealed class JsonhReader : IDisposable {
     public IEnumerable<Result<JsonhToken>> ReadElement() {
         // Comments & whitespace
         foreach (Result<JsonhToken> Token in ReadCommentsAndWhitespace()) {
-            yield return Token;
             if (Token.IsError) {
+                yield return Token;
                 yield break;
+            }
+            yield return Token;
+        }
+
+        // Peek char
+        if (Peek() is not char Char) {
+            yield return new Error("Expected token, got end of input");
+            yield break;
+        }
+
+        // String
+        if (Char is '"' or '\'') {
+            yield return ReadString();
+        }
+        // Ambiguous (null, true, false, quoteless string, braceless object)
+        else {
+            foreach (Result<JsonhToken> Token in ReadAmbiguous()) {
+                if (Token.IsError) {
+                    yield return Token;
+                    yield break;
+                }
+                yield return Token;
+            }
+        }
+    }
+    private Result<JsonhToken> ReadString() {
+        char Quote;
+
+        // Start double-quote
+        if (TryRead('"')) {
+            Quote = '"';
+        }
+        // Start single-quote
+        else if (TryRead('\'')) {
+            Quote = '\'';
+        }
+        else {
+            return new Error("Expected quote to start string");
+        }
+
+        // Read string
+        ValueStringBuilder StringBuilder = new();
+
+        while (true) {
+            if (Read() is not char Char) {
+                return new Error("Expected end of string, got end of input");
+            }
+
+            // End quote
+            if (Char == Quote) {
+                return new JsonhToken(this, JsonTokenType.String, StringBuilder.ToString());
+            }
+            else if (Char is '\\') {
+                if (Read() is not char EscapeChar) {
+                    return new Error("Expected escape character after `\\`, got end of input");
+                }
+
+                switch (EscapeChar) {
+                    // Reverse solidus
+                    case '\\':
+                        StringBuilder.Append('\\');
+                        break;
+                    // Backspace
+                    case 'b':
+                        StringBuilder.Append('\b');
+                        break;
+                    // Form feed
+                    case 'f':
+                        StringBuilder.Append('\f');
+                        break;
+                    // Newline
+                    case 'n':
+                        StringBuilder.Append('\n');
+                        break;
+                    // Carriage return
+                    case 'r':
+                        StringBuilder.Append('\r');
+                        break;
+                    // Tab
+                    case 't':
+                        StringBuilder.Append('\t');
+                        break;
+                    // Vertical tab
+                    case 'v':
+                        StringBuilder.Append('\v');
+                        break;
+                    // Null
+                    case '0':
+                        StringBuilder.Append('\0');
+                        break;
+                    // Alert
+                    case 'a':
+                        StringBuilder.Append('\a');
+                        break;
+                    // Escape
+                    case 'e':
+                        StringBuilder.Append('\e');
+                        break;
+                    // Newline
+                    case 'n' or 'r' or LineSeparatorChar or ParagraphSeparatorChar:
+                        break;
+                    // Rune
+                    default:
+                        // Surrogate pair
+                        if (char.IsHighSurrogate(EscapeChar)) {
+                            char EscapeCharLowSurrogate = Read()!.Value;
+                            StringBuilder.Append(new Rune(EscapeChar, EscapeCharLowSurrogate));
+                        }
+                        // BMP character
+                        else {
+                            StringBuilder.Append(EscapeChar);
+                        }
+                        break;
+                }
+            }
+            // Literal character
+            else {
+                StringBuilder.Append(Char);
             }
         }
     }
@@ -60,13 +181,8 @@ public sealed class JsonhReader : IDisposable {
                 yield break;
             }
 
-            // Peek char
-            if (Peek() is not char Char) {
-                yield break;
-            }
-
             // Comment
-            if (Char is '#' or '/') {
+            if (Peek() is '#' or '/') {
                 yield return ReadComment();
             }
             // End of comments
@@ -76,16 +192,16 @@ public sealed class JsonhReader : IDisposable {
         }
     }
     private Result<JsonhToken> ReadComment() {
-        bool BlockComment;
+        /*bool HashComment = false;*/
+        bool BlockComment = false;
 
         // Hash-style comment
         if (TryRead('#')) {
-            BlockComment = false;
+            /*HashComment = true;*/
         }
         else if (TryRead('/')) {
             // Line-style comment
             if (TryRead('/')) {
-                BlockComment = false;
             }
             // Block-style comment
             else if (TryRead('*')) {
@@ -113,13 +229,13 @@ public sealed class JsonhReader : IDisposable {
                 }
                 // End of block comment
                 if (Char is '*' && TryRead('/')) {
-                    return new JsonhToken(this, JsonTokenType.Comment, StringBuilder.ToString());
+                    return new JsonhToken(this, JsonTokenType.Comment/*, JsonhTokenType.BlockComment*/, StringBuilder.ToString());
                 }
             }
             else {
                 // End of line comment
-                if (Char is null or '\n' or '\r' or '\u2028' or '\u2029') {
-                    return new JsonhToken(this, JsonTokenType.Comment, StringBuilder.ToString());
+                if (Char is null or '\n' or '\r' or LineSeparatorChar or ParagraphSeparatorChar) {
+                    return new JsonhToken(this, JsonTokenType.Comment/*, HashComment ? JsonhTokenType.HashComment : JsonhTokenType.LineComment*/, StringBuilder.ToString());
                 }
             }
 
@@ -143,6 +259,9 @@ public sealed class JsonhReader : IDisposable {
                 return Result.Success;
             }
         }
+    }
+    private IEnumerable<Result<JsonhToken>> ReadAmbiguous() {
+        
     }
     private char? Peek() {
         int Char = TextReader.Peek();
@@ -172,11 +291,46 @@ public sealed class JsonhReader : IDisposable {
     }
 }
 
-/// <summary>
-/// A single JSONH token with a <see cref="JsonTokenType"/>.
-/// </summary>
-public readonly record struct JsonhToken(JsonhReader Reader, JsonTokenType Type, string Value = "");
-
 public struct JsonhReaderOptions {
 
 }
+
+/// <summary>
+/// A single JSONH token with a <see cref="JsonTokenType"/>.
+/// </summary>
+public readonly record struct JsonhToken(JsonhReader Reader, JsonTokenType JsonType/*, JsonhTokenType JsonhType*/, string Value = "") {
+    public readonly JsonhReader Reader { get; } = Reader;
+    public readonly JsonTokenType JsonType { get; } = JsonType;
+    //public readonly JsonhTokenType JsonhType { get; } = JsonhType;
+    public readonly string Value { get; } = Value;
+}
+
+/*/// <summary>
+/// Defines the various tokens that make up a JSONH text.<br/>
+/// Unlike <see cref="JsonTokenType"/>, this enum specifies the specific JSONH syntax.
+/// </summary>
+public enum JsonhTokenType {
+    None,
+    StartObject,
+    EndObject,
+    StartBracelessObject,
+    EndBracelessObject,
+    StartArray,
+    EndArray,
+    PropertyName,
+    HashComment,
+    LineComment,
+    BlockComment,
+    DoubleQuotedString,
+    SingleQuotedString,
+    MultiQuotedString,
+    QuotelessString,
+    Number,
+    HexadecimalInteger,
+    BinaryInteger,
+    OctalInteger,
+    NamedNumber,
+    True,
+    False,
+    Null,
+}*/

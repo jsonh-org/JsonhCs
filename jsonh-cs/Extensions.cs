@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace Jsonh;
+namespace JsonhCs;
 
 public static class Extensions {
     /* Erroneous code:

@@ -42,8 +42,8 @@ item_separator
 string
     double_quoted_string
     single_quoted_string
-    triple_quoted_string
-    unquoted_string
+    multi_quoted_string
+    quoteless_string
 
 double_quoted_string
     '"' double_quoted_string_contents '"'
@@ -67,40 +67,37 @@ single_quoted_string_rune
     rune - "'" - "\"
     "\" escape
 
-triple_quoted_string
-    "'''" triple_single_quoted_string_contents "'''"  # same number of closing quotes as opening quotes
-    '"""' triple_double_quoted_string_contents '"""'  # same number of closing quotes as opening quotes
+multi_quoted_string
+    "'''" multi_single_quoted_string_contents "'''"  # same number of closing quotes as opening quotes
+    '"""' multi_double_quoted_string_contents '"""'  # same number of closing quotes as opening quotes
 
-triple_single_quoted_string_contents
-    triple_single_quoted_string_rune
-    triple_single_quoted_string_rune triple_single_quoted_string_contents
+multi_single_quoted_string_contents
+    multi_single_quoted_string_rune
+    multi_single_quoted_string_rune multi_single_quoted_string_contents
 
-triple_single_quoted_string_rune
+multi_single_quoted_string_rune
     rune - "'''"  # same number of closing quotes as opening quotes
 
-triple_double_quoted_string_contents
-    triple_double_quoted_string_rune
-    triple_double_quoted_string_rune triple_double_quoted_string_contents
+multi_double_quoted_string_contents
+    multi_double_quoted_string_rune
+    multi_double_quoted_string_rune multi_double_quoted_string_contents
 
-triple_double_quoted_string_rune
+multi_double_quoted_string_rune
     rune - '"""'  # same number of closing quotes as opening quotes
 
-unquoted_string
-    unquoted_string_contents
+quoteless_string
+    quoteless_string_contents
 
-unquoted_string_contents
+quoteless_string_contents
     ""
-    unquoted_string_rune unquoted_string_contents
+    quoteless_string_rune quoteless_string_contents
 
-unquoted_string_rune
+quoteless_string_rune
     rune - "," - ":" - "[" - "]" - "{" - "}" - "\"
     "\" escape
 
 escape
-    '"'
-    "'"
     "\"
-    "/"
     "b"
     "f"
     "n"
@@ -151,6 +148,7 @@ number
     sign fraction exponent
     hex_integer
     binary_integer
+    octal_integer
     named_number
 
 fraction
@@ -174,6 +172,10 @@ hex_integer
 binary_integer
     sign "0b" binary_digits
     sign "OB" binary_digits
+
+octal_integer
+    sign "0o" octal_digits
+    sign "0O" octal_digits
 
 named_number
     sign "Infinity"
