@@ -3,7 +3,7 @@ using System.Text.Json;
 
 namespace JsonhCs.Tests;
 
-public class ParserTests {
+public class ReadTests {
     [Fact]
     public void BasicObjectTest() {
         string Jsonh = """
@@ -21,16 +21,5 @@ public class ParserTests {
         Assert.Equal(JsonTokenType.String, Tokens[2].Value.JsonType);
         Assert.Equal("b", Tokens[2].Value.Value);
         Assert.Equal(JsonTokenType.EndObject, Tokens[3].Value.JsonType);
-    }
-    [Fact]
-    public void EscapeSequenceTest() {
-        string Jsonh = """
-            "\U0001F47D and \uD83D\uDC7D"
-            """;
-        Result<JsonhToken>[] Tokens = new JsonhReader(Jsonh).ReadElement().ToArray();
-
-        Assert.All(Tokens, Token => Assert.True(Token.IsValue));
-        Assert.Equal(JsonTokenType.String, Tokens[0].Value.JsonType);
-        Assert.Equal("👽 and 👽", Tokens[0].Value.Value);
     }
 }

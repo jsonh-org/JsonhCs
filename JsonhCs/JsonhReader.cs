@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Globalization;
 using LinkDotNet.StringBuilder;
 using ResultZero;
+using System.Text.Json.Nodes;
 
 namespace JsonhCs;
 
@@ -55,6 +56,127 @@ public sealed class JsonhReader : IDisposable {
         TextReader.Dispose();
     }
 
+    /// <summary>
+    /// Parses a single element from the stream.
+    /// </summary>
+    public Result<T?> ParseElement<T>() {
+        return ParseNode().Try(Value => Value.Deserialize<T>(JsonOptions.Mini));
+    }
+    /// <inheritdoc cref="ParseElement{T}(bool)"/>
+    public Result<JsonElement> ParseElement() {
+        return ParseElement<JsonElement>();
+    }
+    /// <summary>
+    /// Parses a single <see cref="JsonNode"/> from the stream.
+    /// </summary>
+    public Result<JsonNode?> ParseNode() {
+        JsonNode? CurrentNode = null;
+        string? CurrentPropertyName = null;
+
+        bool SubmitNode(JsonNode? Node) {
+            // Root value
+            if (CurrentNode is null) {
+                return true;
+            }
+            // Array item
+            if (CurrentPropertyName is null) {
+                CurrentNode.AsArray().Add(Node);
+                return false;
+            }
+            // Object property
+            else {
+                CurrentNode.AsObject().Add(CurrentPropertyName, Node);
+                CurrentPropertyName = null;
+                return false;
+            }
+        }
+        void StartNode(JsonNode Node) {
+            SubmitNode(Node);
+            CurrentNode = Node;
+        }
+
+        foreach (Result<JsonhToken> TokenResult in ReadElement()) {
+            // Check error
+            if (!TokenResult.TryGetValue(out JsonhToken Token, out Error Error)) {
+                return Error;
+            }
+
+            // Null
+            if (Token.JsonType is JsonTokenType.Null) {
+                JsonValue? Node = null;
+                if (SubmitNode(Node)) {
+                    return Node;
+                }
+            }
+            // True
+            else if (Token.JsonType is JsonTokenType.True) {
+                JsonValue Node = JsonValue.Create(true);
+                if (SubmitNode(Node)) {
+                    return Node;
+                }
+            }
+            // False
+            else if (Token.JsonType is JsonTokenType.False) {
+                JsonValue Node = JsonValue.Create(false);
+                if (SubmitNode(Node)) {
+                    return Node;
+                }
+            }
+            // String
+            else if (Token.JsonType is JsonTokenType.String) {
+                JsonValue Node = JsonValue.Create(Token.Value);
+                if (SubmitNode(Node)) {
+                    return Node;
+                }
+            }
+            // Number
+            else if (Token.JsonType is JsonTokenType.Number) {
+                // TODO:
+                // A number node can't be created from a string yet, so create a string node instead.
+                // See https://github.com/dotnet/runtime/discussions/111373
+                JsonNode Node = JsonValue.Create(Token.Value);
+                if (SubmitNode(Node)) {
+                    return Node;
+                }
+            }
+            // Start Object
+            else if (Token.JsonType is JsonTokenType.StartObject) {
+                JsonObject Node = [];
+                StartNode(Node);
+            }
+            // Start Array
+            else if (Token.JsonType is JsonTokenType.StartArray) {
+                JsonArray Node = [];
+                StartNode(Node);
+            }
+            // End Object/Array
+            else if (Token.JsonType is JsonTokenType.EndObject or JsonTokenType.EndArray) {
+                // Nested node
+                if (CurrentNode?.Parent is not null) {
+                    CurrentNode = CurrentNode.Parent;
+                }
+                // Root node
+                else {
+                    return CurrentNode;
+                }
+            }
+            // Property Name
+            else if (Token.JsonType is JsonTokenType.PropertyName) {
+                CurrentPropertyName = Token.Value;
+            }
+            // Comment
+            else if (Token.JsonType is JsonTokenType.Comment) {
+                // Pass
+            }
+            // Not implemented
+            else {
+                throw new NotImplementedException(Token.JsonType.ToString());
+            }
+        }
+
+        // End of input
+        return new Error("Expected token, got end of input");
+    }
     public IEnumerable<Result<JsonhToken>> ReadElement() {
         // Comments & whitespace
         foreach (Result<JsonhToken> Token in ReadCommentsAndWhitespace()) {
@@ -440,38 +562,27 @@ public sealed class JsonhReader : IDisposable {
         while (true) {
             // Read char
             if (Read() is not char Char) {
-                //yield return new Error("Expected token, got end of input");
-                //yield break;
                 return [new Error("Expected token, got end of input")];
             }
 
             // Null
             if (StringBuilder.Equals("nul") && Char is 'l') {
-                //yield return new JsonhToken(this, JsonTokenType.Null);
-                //yield break;
                 return [new JsonhToken(this, JsonTokenType.Null)];
             }
             // True
             else if (StringBuilder.Equals("tru") && Char is 'e') {
-                //yield return new JsonhToken(this, JsonTokenType.True);
-                //yield break;
                 return [new JsonhToken(this, JsonTokenType.True)];
             }
             // False
             else if (StringBuilder.Equals("fals") && Char is 'e') {
-                //yield return new JsonhToken(this, JsonTokenType.False);
-                //yield break;
                 return [new JsonhToken(this, JsonTokenType.False)];
             }
             // Braceless object
             else if (Char is ':' && StringBuilder.Length != 0) {
-                //yield return new JsonhToken(this, JsonTokenType.StartObject);
-                //yield return new JsonhToken(this, JsonTokenType.PropertyName, StringBuilder.ToString());
                 return ReadObject(OmitBraces: true);
             }
             // Quoteless string
             else if (NewlineChars.Contains(Char) || ReservedChars.Contains(Char)) {
-                //yield return new JsonhToken(this, JsonTokenType.String, StringBuilder.ToString());
                 return [new JsonhToken(this, JsonTokenType.String, StringBuilder.ToString())];
             }
 
