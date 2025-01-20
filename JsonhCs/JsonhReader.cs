@@ -177,6 +177,49 @@ public sealed class JsonhReader : IDisposable {
         // End of input
         return new Error("Expected token, got end of input");
     }
+    /// <summary>
+    /// Tries to find the given property name in the stream.<br/>
+    /// For example, to find <c>c</c>:
+    /// <code>
+    /// // Original position
+    /// {
+    ///   "a": "1",
+    ///   "b": {
+    ///     "c": "2"
+    ///   },
+    ///   "c":/* Final position */ "3"
+    /// }
+    /// </code>
+    /// </summary>
+    public bool FindPropertyValue(string PropertyName) {
+        long CurrentDepth = 0;
+
+        foreach (Result<JsonhToken> TokenResult in ReadElement()) {
+            // Check error
+            if (!TokenResult.TryGetValue(out JsonhToken Token)) {
+                return false;
+            }
+
+            // Start structure
+            if (Token.JsonType is JsonTokenType.StartObject or JsonTokenType.StartArray) {
+                CurrentDepth++;
+            }
+            // End structure
+            else if (Token.JsonType is JsonTokenType.EndObject or JsonTokenType.EndArray) {
+                CurrentDepth--;
+            }
+            // Property name
+            else if (Token.JsonType is JsonTokenType.PropertyName) {
+                if (CurrentDepth == 1 && Token.Value == PropertyName) {
+                    // Path found
+                    return true;
+                }
+            }
+        }
+
+        // Path not found
+        return false;
+    }
     public IEnumerable<Result<JsonhToken>> ReadElement() {
         // Comments & whitespace
         foreach (Result<JsonhToken> Token in ReadCommentsAndWhitespace()) {
