@@ -1,6 +1,7 @@
-﻿using LinkDotNet.StringBuilder;
-using System.Text;
+﻿using System.Text;
 using System.Text.Json;
+using System.Globalization;
+using LinkDotNet.StringBuilder;
 using ResultZero;
 
 namespace JsonhCs;
@@ -258,6 +259,7 @@ public sealed class JsonhReader : IDisposable {
             if (Char == Quote) {
                 return new JsonhToken(this, JsonTokenType.String, StringBuilder.ToString());
             }
+            // Escape sequence
             else if (Char is '\\') {
                 if (Read() is not char EscapeChar) {
                     return new Error("Expected escape character after `\\`, got end of input");
@@ -302,6 +304,27 @@ public sealed class JsonhReader : IDisposable {
                 // Escape
                 else if (EscapeChar is 'e') {
                     StringBuilder.Append('\e');
+                }
+                // Unicode hex sequence
+                else if (EscapeChar is 'u') {
+                    if (!ReadHexSequence(4).TryGetValue(out uint Result, out Error Error)) {
+                        return Error;
+                    }
+                    StringBuilder.Append((char)Result);
+                }
+                // Short unicode hex sequence
+                else if (EscapeChar is 'x') {
+                    if (!ReadHexSequence(2).TryGetValue(out uint Result, out Error Error)) {
+                        return Error;
+                    }
+                    StringBuilder.Append((char)Result);
+                }
+                // Long unicode hex sequence
+                else if (EscapeChar is 'U') {
+                    if (!ReadHexSequence(8).TryGetValue(out uint Result, out Error Error)) {
+                        return Error;
+                    }
+                    StringBuilder.Append((Rune)Result);
                 }
                 // Escaped newline
                 else if (NewlineChars.Contains(EscapeChar)) {
@@ -454,6 +477,25 @@ public sealed class JsonhReader : IDisposable {
 
             StringBuilder.Append(Char);
         }
+    }
+    private Result<uint> ReadHexSequence(int Length) {
+        Span<char> HexChars = stackalloc char[Length];
+
+        for (int Index = 0; Index < Length; Index++) {
+            char? Char = Read();
+
+            // Hex digit
+            if (Char is (>= '0' and <= '9') or (>= 'A' and <= 'F') or (>= 'a' and <= 'f')) {
+                HexChars[Index] = Char.Value;
+            }
+            // Unexpected char
+            else {
+                return new Error("Incorrect number of hexadecimal digits in unicode escape sequence");
+            }
+        }
+
+        // Parse unicode character from hex digits
+        return uint.Parse(HexChars, NumberStyles.AllowHexSpecifier);
     }
     private char? Peek() {
         int Char = TextReader.Peek();
