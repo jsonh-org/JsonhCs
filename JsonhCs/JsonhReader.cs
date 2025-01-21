@@ -1,9 +1,9 @@
 ﻿using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Globalization;
 using LinkDotNet.StringBuilder;
 using ResultZero;
-using System.Text.Json.Nodes;
 
 namespace JsonhCs;
 
@@ -16,9 +16,6 @@ public sealed class JsonhReader : IDisposable {
     /// The options to use when reading JSONH.
     /// </summary>
     public JsonhReaderOptions Options { get; set; }
-
-    //private const char LineSeparatorChar = '\u2028';
-    //private const char ParagraphSeparatorChar = '\u2029';
 
     private static ReadOnlySpan<char> ReservedChars => [',', ':', '[', ']', '{', '}', '/', '#', '\\'];
     private static ReadOnlySpan<char> NewlineChars => ['\n', '\r', '\u2028', '\u2029'];
@@ -530,12 +527,10 @@ public sealed class JsonhReader : IDisposable {
         }
     }
     private Result<JsonhToken> ReadComment() {
-        /*bool HashComment = false;*/
         bool BlockComment = false;
 
         // Hash-style comment
         if (ReadWhen('#')) {
-            /*HashComment = true;*/
         }
         else if (ReadWhen('/')) {
             // Line-style comment
@@ -567,13 +562,13 @@ public sealed class JsonhReader : IDisposable {
                 }
                 // End of block comment
                 if (Char is '*' && ReadWhen('/')) {
-                    return new JsonhToken(this, JsonTokenType.Comment/*, JsonhTokenType.BlockComment*/, StringBuilder.ToString());
+                    return new JsonhToken(this, JsonTokenType.Comment, StringBuilder.ToString());
                 }
             }
             else {
                 // End of line comment
                 if (Char is null || NewlineChars.Contains(Char.Value)) {
-                    return new JsonhToken(this, JsonTokenType.Comment/*, HashComment ? JsonhTokenType.HashComment : JsonhTokenType.LineComment*/, StringBuilder.ToString());
+                    return new JsonhToken(this, JsonTokenType.Comment, StringBuilder.ToString());
                 }
             }
 
@@ -694,39 +689,8 @@ public struct JsonhReaderOptions {
 /// <summary>
 /// A single JSONH token with a <see cref="JsonTokenType"/>.
 /// </summary>
-public readonly record struct JsonhToken(JsonhReader Reader, JsonTokenType JsonType/*, JsonhTokenType JsonhType*/, string Value = "") {
+public readonly record struct JsonhToken(JsonhReader Reader, JsonTokenType JsonType, string Value = "") {
     public readonly JsonhReader Reader { get; } = Reader;
     public readonly JsonTokenType JsonType { get; } = JsonType;
-    //public readonly JsonhTokenType JsonhType { get; } = JsonhType;
     public readonly string Value { get; } = Value;
 }
-
-/*/// <summary>
-/// Defines the various tokens that make up a JSONH text.<br/>
-/// Unlike <see cref="JsonTokenType"/>, this enum specifies the specific JSONH syntax.
-/// </summary>
-public enum JsonhTokenType {
-    None,
-    StartObject,
-    EndObject,
-    StartBracelessObject,
-    EndBracelessObject,
-    StartArray,
-    EndArray,
-    PropertyName,
-    HashComment,
-    LineComment,
-    BlockComment,
-    DoubleQuotedString,
-    SingleQuotedString,
-    MultiQuotedString,
-    QuotelessString,
-    Number,
-    HexadecimalInteger,
-    BinaryInteger,
-    OctalInteger,
-    NamedNumber,
-    True,
-    False,
-    Null,
-}*/
