@@ -1,7 +1,4 @@
-﻿using ResultZero;
-using System.Text.Json;
-
-namespace JsonhCs.Tests;
+﻿namespace JsonhCs.Tests;
 
 public class ParseTests {
     [Fact]
@@ -12,5 +9,16 @@ public class ParseTests {
         string Element = new JsonhReader(Jsonh).ParseElement<string>().Value!;
 
         Assert.Equal("👽 and 👽", Element);
+    }
+    [Fact]
+    public void MultiQuotedStringTest() {
+        string Jsonh = """""  
+                """"
+                  Hello! Here's a quote: ". Now a double quote: "". And a triple quote! """. Escape: \\\U0001F47D.
+                 """"
+            """"";
+        string Element = new JsonhReader(Jsonh).ParseElement<string>().Value!;
+
+        Assert.Equal(" Hello! Here's a quote: \". Now a double quote: \"\". And a triple quote! \"\"\". Escape: \\👽.", Element);
     }
 }
