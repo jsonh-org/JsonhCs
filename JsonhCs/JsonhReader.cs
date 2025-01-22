@@ -591,7 +591,7 @@ public sealed class JsonhReader : IDisposable {
                         if (StringBuilder.AsSpan().StartsWith([NewlineChar])) {
                             int NewlineLength = 1;
                             // Join CR LF
-                            if (StringBuilder.AsSpan().StartsWith("\r\n")) {
+                            if (NewlineChar is '\r' && StringBuilder.AsSpan().StartsWith("\r\n")) {
                                 NewlineLength = 2;
                             }
 
