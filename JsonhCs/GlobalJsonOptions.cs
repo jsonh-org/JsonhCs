@@ -1,13 +1,13 @@
-﻿using System.Text.Encodings.Web;
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Encodings.Web;
 
 namespace JsonhCs;
 
 /// <summary>
 /// Presets for <see cref="JsonSerializerOptions"/>.
 /// </summary>
-public static class JsonOptions {
+public static class GlobalJsonOptions {
     /// <summary>
     /// A preset for reading and writing JSON with minimal formatting.<br/>
     /// <list type="bullet">

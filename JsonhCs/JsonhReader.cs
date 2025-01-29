@@ -58,7 +58,7 @@ public sealed class JsonhReader : IDisposable {
     /// Parses a single element from the stream.
     /// </summary>
     public Result<T?> ParseElement<T>() {
-        return ParseNode().Try(Value => Value.Deserialize<T>(JsonOptions.Mini));
+        return ParseNode().Try(Value => Value.Deserialize<T>(GlobalJsonOptions.Mini));
     }
     /// <inheritdoc cref="ParseElement{T}(bool)"/>
     public Result<JsonElement> ParseElement() {
@@ -222,7 +222,7 @@ public sealed class JsonhReader : IDisposable {
         // Comments & whitespace
         foreach (Result<JsonhToken> Token in ReadCommentsAndWhitespace()) {
             if (Token.IsError) {
-                yield return Token;
+                yield return Token.Error;
                 yield break;
             }
             yield return Token;
@@ -238,7 +238,17 @@ public sealed class JsonhReader : IDisposable {
         if (Char is '{') {
             foreach (Result<JsonhToken> Token in ReadObject(OmitBraces: false)) {
                 if (Token.IsError) {
-                    yield return Token;
+                    yield return Token.Error;
+                    yield break;
+                }
+                yield return Token;
+            }
+        }
+        // Array
+        else if (Char is '[') {
+            foreach (Result<JsonhToken> Token in ReadArray()) {
+                if (Token.IsError) {
+                    yield return Token.Error;
                     yield break;
                 }
                 yield return Token;
@@ -252,7 +262,7 @@ public sealed class JsonhReader : IDisposable {
         else {
             foreach (Result<JsonhToken> Token in ReadAmbiguous()) {
                 if (Token.IsError) {
-                    yield return Token;
+                    yield return Token.Error;
                     yield break;
                 }
                 yield return Token;
@@ -261,11 +271,9 @@ public sealed class JsonhReader : IDisposable {
     }
     private IEnumerable<Result<JsonhToken>> ReadObject(bool OmitBraces) {
         // Opening brace
-        if (!OmitBraces) {
-            if (!ReadWhen('{')) {
-                yield return new Error("Expected `{` to start object");
-                yield break;
-            }
+        if (!OmitBraces && !ReadWhen('{')) {
+            yield return new Error("Expected `{` to start object");
+            yield break;
         }
         // Start of object
         yield return new JsonhToken(this, JsonTokenType.StartObject);
@@ -273,7 +281,7 @@ public sealed class JsonhReader : IDisposable {
         // Comments & whitespace
         foreach (Result<JsonhToken> Token in ReadCommentsAndWhitespace()) {
             if (Token.IsError) {
-                yield return Token;
+                yield return Token.Error;
                 yield break;
             }
             yield return Token;
@@ -319,12 +327,12 @@ public sealed class JsonhReader : IDisposable {
                 yield return new Error("Unexpected `]`");
                 yield break;
             }
-            // Property name
+            // Property
             else {
                 // Property name
                 foreach (Result<JsonhToken> Token in ReadPropertyName()) {
                     if (Token.IsError) {
-                        yield return Token;
+                        yield return Token.Error;
                         yield break;
                     }
                     yield return Token;
@@ -333,7 +341,7 @@ public sealed class JsonhReader : IDisposable {
                 // Comments & whitespace
                 foreach (Result<JsonhToken> Token in ReadCommentsAndWhitespace()) {
                     if (Token.IsError) {
-                        yield return Token;
+                        yield return Token.Error;
                         yield break;
                     }
                     yield return Token;
@@ -342,7 +350,7 @@ public sealed class JsonhReader : IDisposable {
                 // Property value
                 foreach (Result<JsonhToken> Token in ReadElement()) {
                     if (Token.IsError) {
-                        yield return Token;
+                        yield return Token.Error;
                         yield break;
                     }
                     yield return Token;
@@ -351,7 +359,7 @@ public sealed class JsonhReader : IDisposable {
                 // Comments & whitespace
                 foreach (Result<JsonhToken> Token in ReadCommentsAndWhitespace()) {
                     if (Token.IsError) {
-                        yield return Token;
+                        yield return Token.Error;
                         yield break;
                     }
                     yield return Token;
@@ -363,7 +371,77 @@ public sealed class JsonhReader : IDisposable {
                 // Comments & whitespace
                 foreach (Result<JsonhToken> Token in ReadCommentsAndWhitespace()) {
                     if (Token.IsError) {
-                        yield return Token;
+                        yield return Token.Error;
+                        yield break;
+                    }
+                    yield return Token;
+                }
+            }
+        }
+    }
+    private IEnumerable<Result<JsonhToken>> ReadArray() {
+        // Opening bracket
+        if (!ReadWhen('[')) {
+            yield return new Error("Expected `[` to start array");
+            yield break;
+        }
+        // Start of array
+        yield return new JsonhToken(this, JsonTokenType.StartArray);
+
+        // Comments & whitespace
+        foreach (Result<JsonhToken> Token in ReadCommentsAndWhitespace()) {
+            if (Token.IsError) {
+                yield return Token.Error;
+                yield break;
+            }
+            yield return Token;
+        }
+
+        while (true) {
+            if (Peek() is not char Char) {
+                // End of incomplete array
+                if (Options.IncompleteInputs) {
+                    yield return new JsonhToken(this, JsonTokenType.EndArray);
+                    yield break;
+                }
+                // Missing closing bracket
+                yield return new Error("Expected `]` to end array, got end of input");
+                yield break;
+            }
+
+            // Closing bracket
+            if (Char is ']') {
+                Read();
+                yield return new JsonhToken(this, JsonTokenType.EndArray);
+                yield break;
+            }
+            // Item
+            else {
+                // Element
+                foreach (Result<JsonhToken> Token in ReadElement()) {
+                    if (Token.IsError) {
+                        yield return Token.Error;
+                        yield break;
+                    }
+                    yield return Token;
+                }
+
+                // Comments & whitespace
+                foreach (Result<JsonhToken> Token in ReadCommentsAndWhitespace()) {
+                    if (Token.IsError) {
+                        yield return Token.Error;
+                        yield break;
+                    }
+                    yield return Token;
+                }
+
+                // Optional comma
+                ReadWhen(',');
+
+                // Comments & whitespace
+                foreach (Result<JsonhToken> Token in ReadCommentsAndWhitespace()) {
+                    if (Token.IsError) {
+                        yield return Token.Error;
                         yield break;
                     }
                     yield return Token;
@@ -380,10 +458,11 @@ public sealed class JsonhReader : IDisposable {
 
         // Comments & whitespace
         foreach (Result<JsonhToken> Token in ReadCommentsAndWhitespace()) {
-            yield return Token;
             if (Token.IsError) {
+                yield return Token.Error;
                 yield break;
             }
+            yield return Token;
         }
 
         // Colon
