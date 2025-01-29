@@ -425,7 +425,7 @@ public sealed class JsonhReader : IDisposable {
         int EndQuoteCounter = 0;
 
         // Read string
-        ValueStringBuilder StringBuilder = new();
+        ValueStringBuilder StringBuilder = new(stackalloc char[32]);
 
         while (true) {
             if (Read() is not char Char) {
@@ -648,7 +648,7 @@ public sealed class JsonhReader : IDisposable {
         }
 
         // Read comment
-        ValueStringBuilder StringBuilder = new();
+        ValueStringBuilder StringBuilder = new(stackalloc char[32]);
 
         while (true) {
             // Peek char
@@ -694,7 +694,7 @@ public sealed class JsonhReader : IDisposable {
     }
     private IEnumerable<Result<JsonhToken>> ReadAmbiguous() {
         // Read ambiguous token
-        ValueStringBuilder StringBuilder = new();
+        ValueStringBuilder StringBuilder = new(stackalloc char[32]);
 
         while (true) {
             // Read char
@@ -789,7 +789,7 @@ public struct JsonhReaderOptions {
 /// A single JSONH token with a <see cref="JsonTokenType"/>.
 /// </summary>
 public readonly record struct JsonhToken(JsonhReader Reader, JsonTokenType JsonType, string Value = "") {
-    public readonly JsonhReader Reader { get; } = Reader;
-    public readonly JsonTokenType JsonType { get; } = JsonType;
-    public readonly string Value { get; } = Value;
+    public JsonhReader Reader { get; } = Reader;
+    public JsonTokenType JsonType { get; } = JsonType;
+    public string Value { get; } = Value;
 }
