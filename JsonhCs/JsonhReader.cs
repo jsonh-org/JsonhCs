@@ -1,9 +1,10 @@
-﻿using LinkDotNet.StringBuilder;
-using ResultZero;
+﻿using System.Buffers;
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using LinkDotNet.StringBuilder;
+using ResultZero;
 
 namespace JsonhCs;
 
@@ -17,8 +18,8 @@ public sealed class JsonhReader : IDisposable {
     /// </summary>
     public JsonhReaderOptions Options { get; set; }
 
-    private static ReadOnlySpan<char> ReservedChars => [',', ':', '[', ']', '{', '}', '/', '#', '\\'];
-    private static ReadOnlySpan<char> NewlineChars => ['\n', '\r', '\u2028', '\u2029'];
+    private static readonly SearchValues<char> ReservedChars = SearchValues.Create([',', ':', '[', ']', '{', '}', '/', '#', '\\']);
+    private static readonly SearchValues<char> NewlineChars = SearchValues.Create(['\n', '\r', '\u2028', '\u2029']);
 
     /// <summary>
     /// Constructs a reader that reads JSONH from a text reader.
@@ -586,18 +587,17 @@ public sealed class JsonhReader : IDisposable {
                     StringBuilder.Remove(StringBuilder.Length - LeadingWhitespaceCount, LeadingWhitespaceCount);
 
                     // Remove leading newline
-                    foreach (char NewlineChar in NewlineChars) {
-                        // Found leading newline
-                        if (StringBuilder.AsSpan().StartsWith([NewlineChar])) {
+                    if (StringBuilder.Length >= 1) {
+                        char LeadingChar = StringBuilder[0];
+                        if (NewlineChars.Contains(LeadingChar)) {
                             int NewlineLength = 1;
                             // Join CR LF
-                            if (NewlineChar is '\r' && StringBuilder.AsSpan().StartsWith("\r\n")) {
+                            if (LeadingChar is '\r' && StringBuilder.Length >= 2 && StringBuilder[1] is '\n') {
                                 NewlineLength = 2;
                             }
 
                             // Remove leading newline
                             StringBuilder.Remove(0, NewlineLength);
-                            break;
                         }
                     }
                 }
