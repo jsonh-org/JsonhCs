@@ -236,7 +236,7 @@ public sealed class JsonhReader : IDisposable {
 
         // Object
         if (Char is '{') {
-            foreach (Result<JsonhToken> Token in ReadObject(OmitBraces: false)) {
+            foreach (Result<JsonhToken> Token in ReadObject()) {
                 if (Token.IsError) {
                     yield return Token.Error;
                     yield break;
@@ -246,7 +246,7 @@ public sealed class JsonhReader : IDisposable {
         }
         // Array
         else if (Char is '[') {
-            foreach (Result<JsonhToken> Token in ReadArray(OmitBrackets: false)) {
+            foreach (Result<JsonhToken> Token in ReadArray()) {
                 if (Token.IsError) {
                     yield return Token.Error;
                     yield break;
@@ -265,11 +265,11 @@ public sealed class JsonhReader : IDisposable {
             }
         }
     }
-    private IEnumerable<Result<JsonhToken>> ReadObject(bool OmitBraces) {
+    private IEnumerable<Result<JsonhToken>> ReadObject() {
         // Opening brace
-        if (!OmitBraces && !ReadWhen('{')) {
-            yield return new Error("Expected `{` to start object");
-            yield break;
+        bool OmitBraces = false;
+        if (!ReadWhen('{')) {
+            OmitBraces = true;
         }
         // Start of object
         yield return new JsonhToken(this, JsonTokenType.StartObject);
@@ -364,11 +364,11 @@ public sealed class JsonhReader : IDisposable {
             }
         }
     }
-    private IEnumerable<Result<JsonhToken>> ReadArray(bool OmitBrackets) {
+    private IEnumerable<Result<JsonhToken>> ReadArray() {
         // Opening bracket
-        if (!OmitBrackets && !ReadWhen('[')) {
-            yield return new Error("Expected `[` to start array");
-            yield break;
+        bool OmitBrackets = false;
+        if (!ReadWhen('[')) {
+            OmitBrackets = true;
         }
         // Start of array
         yield return new JsonhToken(this, JsonTokenType.StartArray);
@@ -819,7 +819,7 @@ public sealed class JsonhReader : IDisposable {
 
             // Braceless object
             if (ReadWhen(':')) {
-                foreach (Result<JsonhToken> Token in ReadObject(OmitBraces: true)) {
+                foreach (Result<JsonhToken> Token in ReadObject()) {
                     if (Token.IsError) {
                         yield return Token.Error;
                         yield break;
@@ -830,7 +830,7 @@ public sealed class JsonhReader : IDisposable {
             }
             // Bracketless array
             else if (ReadWhen(',')) {
-                foreach (Result<JsonhToken> Token in ReadArray(OmitBrackets: true)) {
+                foreach (Result<JsonhToken> Token in ReadArray()) {
                     if (Token.IsError) {
                         yield return Token.Error;
                         yield break;
