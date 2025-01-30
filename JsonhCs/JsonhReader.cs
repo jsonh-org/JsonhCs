@@ -246,7 +246,7 @@ public sealed class JsonhReader : IDisposable {
         }
         // Array
         else if (Char is '[') {
-            foreach (Result<JsonhToken> Token in ReadArray()) {
+            foreach (Result<JsonhToken> Token in ReadArray(OmitBrackets: false)) {
                 if (Token.IsError) {
                     yield return Token.Error;
                     yield break;
@@ -254,13 +254,9 @@ public sealed class JsonhReader : IDisposable {
                 yield return Token;
             }
         }
-        // String
-        else if (Char is '"' or '\'') {
-            yield return ReadString();
-        }
-        // Ambiguous (null, true, false, quoteless string, braceless object)
+        // Primitive value (null, true, false, string, number, braceless object, bracketless array)
         else {
-            foreach (Result<JsonhToken> Token in ReadAmbiguous()) {
+            foreach (Result<JsonhToken> Token in ReadPrimitiveElement()) {
                 if (Token.IsError) {
                     yield return Token.Error;
                     yield break;
@@ -304,27 +300,16 @@ public sealed class JsonhReader : IDisposable {
                 yield break;
             }
 
-            // Closing brace
-            if (Char is '}') {
-                // End of object with omitted braces
-                if (OmitBraces) {
-                    yield return new JsonhToken(this, JsonTokenType.EndObject);
-                    yield break;
-                }
-                // End of object
-                Read();
+            // End of object with omitted braces
+            if (OmitBraces && Char is '}' or ']') {
                 yield return new JsonhToken(this, JsonTokenType.EndObject);
                 yield break;
             }
-            // Closing bracket
-            else if (Char is ']') {
-                // End of object with omitted braces
-                if (OmitBraces) {
-                    yield return new JsonhToken(this, JsonTokenType.EndObject);
-                    yield break;
-                }
-                // Unexpected closing bracket
-                yield return new Error("Unexpected `]`");
+            // Closing brace
+            else if (Char is '}') {
+                // End of object
+                Read();
+                yield return new JsonhToken(this, JsonTokenType.EndObject);
                 yield break;
             }
             // Property
@@ -379,9 +364,9 @@ public sealed class JsonhReader : IDisposable {
             }
         }
     }
-    private IEnumerable<Result<JsonhToken>> ReadArray() {
+    private IEnumerable<Result<JsonhToken>> ReadArray(bool OmitBrackets) {
         // Opening bracket
-        if (!ReadWhen('[')) {
+        if (!OmitBrackets && !ReadWhen('[')) {
             yield return new Error("Expected `[` to start array");
             yield break;
         }
@@ -409,8 +394,14 @@ public sealed class JsonhReader : IDisposable {
                 yield break;
             }
 
+            // End of array with omitted brackets
+            if (OmitBrackets && Char is '}' or ']') {
+                yield return new JsonhToken(this, JsonTokenType.EndArray);
+                yield break;
+            }
             // Closing bracket
-            if (Char is ']') {
+            else if (Char is ']') {
+                // End of array
                 Read();
                 yield return new JsonhToken(this, JsonTokenType.EndArray);
                 yield break;
@@ -771,38 +762,88 @@ public sealed class JsonhReader : IDisposable {
             }
         }
     }
-    private IEnumerable<Result<JsonhToken>> ReadAmbiguous() {
-        // Read ambiguous token
-        ValueStringBuilder StringBuilder = new(stackalloc char[32]);
+    private IEnumerable<Result<JsonhToken>> ReadPrimitiveElement() {
+        /*// Read ambiguous token
+        StringBuilder StringBuilder = new();
 
         while (true) {
             // Read char
             if (Read() is not char Char) {
-                return [new Error("Expected token, got end of input")];
+                yield return new Error("Expected token, got end of input");
+                yield break;
             }
 
             // Null
             if (StringBuilder.Equals("nul") && Char is 'l') {
-                return [new JsonhToken(this, JsonTokenType.Null)];
+                yield return new JsonhToken(this, JsonTokenType.Null);
             }
             // True
             else if (StringBuilder.Equals("tru") && Char is 'e') {
-                return [new JsonhToken(this, JsonTokenType.True)];
+                yield return new JsonhToken(this, JsonTokenType.True);
             }
             // False
             else if (StringBuilder.Equals("fals") && Char is 'e') {
-                return [new JsonhToken(this, JsonTokenType.False)];
+                yield return new JsonhToken(this, JsonTokenType.False);
             }
             // Braceless object
             else if (Char is ':' && StringBuilder.Length != 0) {
-                return ReadObject(OmitBraces: true);
+                foreach (Result<JsonhToken> Token in ReadObject(OmitBraces: true)) {
+                    yield return Token;
+                }
             }
             // Quoteless string
             else if (NewlineChars.Contains(Char) || ReservedChars.Contains(Char)) {
-                return [new JsonhToken(this, JsonTokenType.String, StringBuilder.ToString())];
+                yield return new JsonhToken(this, JsonTokenType.String, StringBuilder.ToString());
+            }
+            // String
+            else if (Char is '"' or '\'') {
+                yield return ReadString();
             }
 
             StringBuilder.Append(Char);
+        }*/
+
+        if (ReadString().TryGetValue(out JsonhToken String)) {
+            // Comments & whitespace
+            List<JsonhToken>? Tokens = null;
+            foreach (Result<JsonhToken> Token in ReadCommentsAndWhitespace()) {
+                if (Token.IsError) {
+                    yield return Token.Error;
+                    yield break;
+                }
+                Tokens ??= [];
+                Tokens.Add(Token.Value);
+            }
+
+            // TODO: Add pending tokens
+
+            // Braceless object
+            if (ReadWhen(':')) {
+                foreach (Result<JsonhToken> Token in ReadObject(OmitBraces: true)) {
+                    if (Token.IsError) {
+                        yield return Token.Error;
+                        yield break;
+                    }
+                    yield return Token;
+                }
+                yield break;
+            }
+            // Bracketless array
+            else if (ReadWhen(',')) {
+                foreach (Result<JsonhToken> Token in ReadArray(OmitBrackets: true)) {
+                    if (Token.IsError) {
+                        yield return Token.Error;
+                        yield break;
+                    }
+                    yield return Token;
+                }
+                yield break;
+            }
+            // String
+            else {
+                yield return new JsonhToken(this, JsonTokenType.String, String.Value);
+                yield break;
+            }
         }
     }
     private Result<uint> ReadHexSequence(int Length) {
