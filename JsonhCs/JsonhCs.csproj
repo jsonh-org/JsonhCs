@@ -8,9 +8,9 @@
 	<NoWarn>IDE0290;IDE0130</NoWarn>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="LinkDotNet.StringBuilder" Version="2.1.0" />
+    <PackageReference Include="LinkDotNet.StringBuilder" Version="2.2.0" />
     <PackageReference Include="System.Text.Json" Version="9.0.1" />
-	<PackageReference Include="ResultZero" Version="1.0.0" />
+	<PackageReference Include="ResultZero" Version="2.0.0" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0' or '$(TargetFramework)' == 'netstandard2.1'">
     <PackageReference Include="PolySharp" Version="1.15.0" />
