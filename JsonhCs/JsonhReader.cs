@@ -18,7 +18,13 @@ public sealed class JsonhReader : IDisposable {
     /// </summary>
     public JsonhReaderOptions Options { get; set; }
 
+    /// <summary>
+    /// Characters that cannot be used in quoteless strings.
+    /// </summary>
     private static readonly SearchValues<char> ReservedChars = SearchValues.Create([',', ':', '[', ']', '{', '}', '/', '#', '\\']);
+    /// <summary>
+    /// Characters that serve as newlines in strings.
+    /// </summary>
     private static readonly SearchValues<char> NewlineChars = SearchValues.Create(['\n', '\r', '\u2028', '\u2029']);
 
     /// <summary>
@@ -268,7 +274,7 @@ public sealed class JsonhReader : IDisposable {
     private IEnumerable<Result<JsonhToken>> ReadObject() {
         // Opening brace
         bool OmitBraces = false;
-        if (!ReadWhen('{')) {
+        if (!ReadOne('{')) {
             OmitBraces = true;
         }
         // Start of object
@@ -351,7 +357,7 @@ public sealed class JsonhReader : IDisposable {
                 }
 
                 // Optional comma
-                ReadWhen(',');
+                ReadOne(',');
 
                 // Comments & whitespace
                 foreach (Result<JsonhToken> Token in ReadCommentsAndWhitespace()) {
@@ -367,7 +373,7 @@ public sealed class JsonhReader : IDisposable {
     private IEnumerable<Result<JsonhToken>> ReadArray() {
         // Opening bracket
         bool OmitBrackets = false;
-        if (!ReadWhen('[')) {
+        if (!ReadOne('[')) {
             OmitBrackets = true;
         }
         // Start of array
@@ -427,7 +433,7 @@ public sealed class JsonhReader : IDisposable {
                 }
 
                 // Optional comma
-                ReadWhen(',');
+                ReadOne(',');
 
                 // Comments & whitespace
                 foreach (Result<JsonhToken> Token in ReadCommentsAndWhitespace()) {
@@ -457,7 +463,7 @@ public sealed class JsonhReader : IDisposable {
         }
 
         // Colon
-        if (!ReadWhen(':')) {
+        if (!ReadOne(':')) {
             yield return new Error("Expected `:` after property name in object");
             yield break;
         }
@@ -466,23 +472,14 @@ public sealed class JsonhReader : IDisposable {
         yield return new JsonhToken(this, JsonTokenType.PropertyName, String.Value);
     }
     private Result<JsonhToken> ReadString() {
-        char StartQuote;
-
-        // Start double-quote
-        if (ReadWhen('"')) {
-            StartQuote = '"';
-        }
-        // Start single-quote
-        else if (ReadWhen('\'')) {
-            StartQuote = '\'';
-        }
-        else {
+        // Start quote
+        if (ReadAny('"', '\'') is not char StartQuote) {
             return new Error("Expected quote to start string");
         }
 
         // Count multiple start quotes
         int StartQuoteCounter = 1;
-        while (ReadWhen(StartQuote)) {
+        while (ReadOne(StartQuote)) {
             StartQuoteCounter++;
         }
 
@@ -495,7 +492,7 @@ public sealed class JsonhReader : IDisposable {
         int EndQuoteCounter = 0;
 
         // Read string
-        ValueStringBuilder StringBuilder = new(stackalloc char[32]);
+        using ValueStringBuilder StringBuilder = new(stackalloc char[32]);
 
         while (true) {
             if (Read() is not char Char) {
@@ -588,17 +585,12 @@ public sealed class JsonhReader : IDisposable {
                 else if (NewlineChars.Contains(EscapeChar)) {
                     // Join CR LF
                     if (EscapeChar is '\r') {
-                        ReadWhen('\n');
+                        ReadOne('\n');
                     }
                 }
-                // Rune
+                // Other
                 else {
                     StringBuilder.Append(EscapeChar);
-
-                    // Surrogate pair
-                    if (char.IsHighSurrogate(EscapeChar)) {
-                        StringBuilder.Append(Read()!.Value);
-                    }
                 }
             }
             // Literal character
@@ -677,6 +669,88 @@ public sealed class JsonhReader : IDisposable {
         // End of string
         return new JsonhToken(this, JsonTokenType.String, StringBuilder.ToString());
     }
+    private Result<JsonhToken> ReadNumber() {
+        // Read number
+        using ValueStringBuilder StringBuilder = new(stackalloc char[32]);
+
+        // Read base
+        ReadOnlySpan<char> BaseDigits = "0123456789";
+        if (ReadOne('0')) {
+            StringBuilder.Append('0');
+
+            if (ReadAny('x', 'X') is char HexBaseChar) {
+                StringBuilder.Append(HexBaseChar);
+                BaseDigits = "0123456789ABCDEFabcdef";
+            }
+            else if (ReadAny('b', 'B') is char BinaryBaseChar) {
+                StringBuilder.Append(BinaryBaseChar);
+                BaseDigits = "01";
+            }
+            else if (ReadAny('o', 'O') is char OctalBaseChar) {
+                StringBuilder.Append(OctalBaseChar);
+                BaseDigits = "01234567";
+            }
+        }
+
+        // Read integer + fraction
+        ReadNumberCore(StringBuilder, BaseDigits);
+
+        // Exponent
+        if (ReadAny('e', 'E') is char ExponentChar) {
+            StringBuilder.Append(ExponentChar);
+            // Read integer + fraction
+            ReadNumberCore(StringBuilder, BaseDigits);
+        }
+
+        // End of number
+        return new JsonhToken(this, JsonTokenType.Number, StringBuilder.ToString());
+    }
+    private Result ReadNumberCore(ValueStringBuilder StringBuilder, ReadOnlySpan<char> BaseDigits) {
+        // Read sign
+        ReadAny('-', '+');
+
+        // Disallow leading underscores
+        if (ReadOne('_')) {
+            return new Error("Leading `_` in number");
+        }
+
+        bool IsFraction = false;
+
+        while (true) {
+            // Peek char
+            if (Peek() is not char Char) {
+                break;
+            }
+
+            // Digit
+            if (BaseDigits.Contains(Char)) {
+                StringBuilder.Append(Char);
+            }
+            // Decimal point
+            else if (Char is '.') {
+                if (IsFraction) {
+                    return new Error("Duplicate `.` in number");
+                }
+                IsFraction = true;
+                StringBuilder.Append(Char);
+            }
+            // Underscore
+            else if (Char is '_') {
+                StringBuilder.Append(Char);
+            }
+            // Other
+            else {
+                break;
+            }
+        }
+
+        // Disallow trailing underscores
+        if (StringBuilder.AsSpan().EndsWith("_")) {
+            return new Error("Trailing `_` in number");
+        }
+        // End of number
+        return Result.Success;
+    }
     private IEnumerable<Result<JsonhToken>> ReadCommentsAndWhitespace() {
         while (true) {
             // Whitespace
@@ -699,14 +773,14 @@ public sealed class JsonhReader : IDisposable {
         bool BlockComment = false;
 
         // Hash-style comment
-        if (ReadWhen('#')) {
+        if (ReadOne('#')) {
         }
-        else if (ReadWhen('/')) {
+        else if (ReadOne('/')) {
             // Line-style comment
-            if (ReadWhen('/')) {
+            if (ReadOne('/')) {
             }
             // Block-style comment
-            else if (ReadWhen('*')) {
+            else if (ReadOne('*')) {
                 BlockComment = true;
             }
             else {
@@ -718,7 +792,7 @@ public sealed class JsonhReader : IDisposable {
         }
 
         // Read comment
-        ValueStringBuilder StringBuilder = new(stackalloc char[32]);
+        using ValueStringBuilder StringBuilder = new(stackalloc char[32]);
 
         while (true) {
             // Peek char
@@ -730,7 +804,7 @@ public sealed class JsonhReader : IDisposable {
                     return new Error("Expected end of block comment, got end of input");
                 }
                 // End of block comment
-                if (Char is '*' && ReadWhen('/')) {
+                if (Char is '*' && ReadOne('/')) {
                     return new JsonhToken(this, JsonTokenType.Comment, StringBuilder.ToString());
                 }
             }
@@ -818,7 +892,7 @@ public sealed class JsonhReader : IDisposable {
             // TODO: Add pending tokens
 
             // Braceless object
-            if (ReadWhen(':')) {
+            if (ReadOne(':')) {
                 foreach (Result<JsonhToken> Token in ReadObject()) {
                     if (Token.IsError) {
                         yield return Token.Error;
@@ -829,7 +903,7 @@ public sealed class JsonhReader : IDisposable {
                 yield break;
             }
             // Bracketless array
-            else if (ReadWhen(',')) {
+            else if (ReadOne(',')) {
                 foreach (Result<JsonhToken> Token in ReadArray()) {
                     if (Token.IsError) {
                         yield return Token.Error;
@@ -879,14 +953,25 @@ public sealed class JsonhReader : IDisposable {
         }
         return (char)Char;
     }
-    private bool ReadWhen(char Char) {
+    private bool ReadOne(char Char) {
         if (Peek() == Char) {
             Read();
             return true;
         }
-        else {
-            return false;
+        return false;
+    }
+    private char? ReadAny(params ReadOnlySpan<char> Options) {
+        // Peek char
+        if (Peek() is not char Char) {
+            return null;
         }
+        // Match option
+        int OptionIndex = Options.IndexOf(Char);
+        if (OptionIndex < 0) {
+            return null;
+        }
+        // Option matched
+        return Options[OptionIndex];
     }
 }
 
