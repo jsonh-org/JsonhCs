@@ -1,4 +1,5 @@
 ﻿using System.Buffers;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
@@ -26,6 +27,11 @@ public sealed class JsonhReader : IDisposable {
     /// Characters that serve as newlines in strings.
     /// </summary>
     private static readonly SearchValues<char> NewlineChars = SearchValues.Create(['\n', '\r', '\u2028', '\u2029']);
+
+    /// <summary>
+    /// Warning message for dynamic serialization.
+    /// </summary>
+    private const string UnreferencedCodeMessage = "JSON serialization and deserialization might require types that cannot be statically analyzed.";
 
     /// <summary>
     /// Constructs a reader that reads JSONH from a text reader.
@@ -63,10 +69,14 @@ public sealed class JsonhReader : IDisposable {
     /// <summary>
     /// Parses a single element from the stream.
     /// </summary>
+    [RequiresUnreferencedCode(UnreferencedCodeMessage)]
+    [RequiresDynamicCode(UnreferencedCodeMessage)]
     public Result<T?> ParseElement<T>() {
         return ParseNode().Try(Value => Value.Deserialize<T>(GlobalJsonOptions.Mini));
     }
     /// <inheritdoc cref="ParseElement{T}(bool)"/>
+    [RequiresUnreferencedCode(UnreferencedCodeMessage)]
+    [RequiresDynamicCode(UnreferencedCodeMessage)]
     public Result<JsonElement> ParseElement() {
         return ParseElement<JsonElement>();
     }
