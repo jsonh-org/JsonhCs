@@ -12,7 +12,7 @@ public class ReadTests {
             }
             """;
 
-        Result<JsonhToken>[] Tokens = new JsonhReader(Jsonh).ReadElement().ToArray();
+        Result<JsonhToken>[] Tokens = [.. new JsonhReader(Jsonh).ReadElement()];
 
         Assert.All(Tokens, Token => Assert.True(Token.IsValue));
         Assert.Equal(JsonTokenType.StartObject, Tokens[0].Value.JsonType);
