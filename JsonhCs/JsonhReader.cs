@@ -274,7 +274,7 @@ public sealed class JsonhReader : IDisposable {
         else {
             Result<JsonhToken> Token = ReadPrimitiveElement();
 
-            // Here we check for braceless objects and bracketless arrays.
+            // TODO: Here we check for braceless objects and bracketless arrays.
 
             yield return Token;
             yield break;
@@ -677,9 +677,10 @@ public sealed class JsonhReader : IDisposable {
         // End of string
         return new JsonhToken(this, JsonTokenType.String, StringBuilder.ToString());
     }
-    private Result<JsonhToken> ReadNumber(out string CharsRead) {
+    private Result<JsonhToken> ReadNumber(out ReadOnlySpan<char> PartialCharsRead) {
         // Read number
-        using ValueStringBuilder StringBuilder = new(stackalloc char[32]);
+        ValueStringBuilder StringBuilder = new(stackalloc char[32]);
+        using ValueStringBuilder ReadOnlyStringBuilder = StringBuilder; // Can't pass using variables by-ref
 
         // Read base
         string BaseDigits = "0123456789";
@@ -701,9 +702,9 @@ public sealed class JsonhReader : IDisposable {
         }
 
         // Read integer + fraction
-        if (ReadNumberCore(StringBuilder, BaseDigits).TryGetError(out Error LeftError)) {
-            CharsRead = StringBuilder.ToString();
-            return LeftError;
+        if (ReadNumberCore(ref StringBuilder, BaseDigits).TryGetError(out Error NumberCoreError)) {
+            PartialCharsRead = StringBuilder.ToString();
+            return NumberCoreError;
         }
 
         // Exponent
@@ -711,17 +712,17 @@ public sealed class JsonhReader : IDisposable {
             StringBuilder.Append(ExponentChar);
 
             // Read integer + fraction
-            if (ReadNumberCore(StringBuilder, BaseDigits).TryGetError(out Error RightError)) {
-                CharsRead = StringBuilder.ToString();
-                return RightError;
+            if (ReadNumberCore(ref StringBuilder, BaseDigits).TryGetError(out Error ExponentCoreError)) {
+                PartialCharsRead = string.Concat(StringBuilder.AsSpan(), StringBuilder.ToString());
+                return ExponentCoreError;
             }
         }
 
         // End of number
-        CharsRead = StringBuilder.ToString();
-        return new JsonhToken(this, JsonTokenType.Number, CharsRead);
+        PartialCharsRead = default;
+        return new JsonhToken(this, JsonTokenType.Number, StringBuilder.ToString());
     }
-    private Result ReadNumberCore(ValueStringBuilder StringBuilder, ReadOnlySpan<char> BaseDigits) {
+    private Result ReadNumberCore(ref ValueStringBuilder StringBuilder, ReadOnlySpan<char> BaseDigits) {
         // Read sign
         ReadAny('-', '+');
 
@@ -773,16 +774,47 @@ public sealed class JsonhReader : IDisposable {
         // End of number
         return Result.Success;
     }
+    private Result<JsonhToken> ReadNumberOrQuotelessString() {
+        // Read number
+        if (ReadNumber(out ReadOnlySpan<char> PartialCharsRead).TryGetValue(out JsonhToken Number)) {
+            // Try read quoteless string starting with number
+            if (DetectQuotelessString(out ReadOnlySpan<char> WhitespaceChars)) {
+                return ReadQuotelessString(string.Concat(Number.Value, WhitespaceChars));
+            }
+            // Otherwise, accept number
+            else {
+                return Number;
+            }
+        }
+        // Read quoteless string starting with malformed number
+        else {
+            return ReadQuotelessString(PartialCharsRead);
+        }
+    }
     private Result<JsonhToken> ReadQuotelessString(ReadOnlySpan<char> InitialChars = default) {
+        // Read quoteless string
         using ValueStringBuilder StringBuilder = new(stackalloc char[32]);
-
         StringBuilder.Append(InitialChars);
 
         while (true) {
             // Read char
-            if (Read() is not char Char) {
+            if (Peek() is not char Char) {
                 break;
             }
+
+            // TODO: Handle escape sequences here.
+
+            // End on reserved character
+            if (ReservedChars.Contains(Char)) {
+                break;
+            }
+            // End on newline
+            else if (NewlineChars.Contains(Char)) {
+                break;
+            }
+
+            // Append string char
+            Read();
             StringBuilder.Append(Char);
 
             // Match named literal
@@ -809,10 +841,7 @@ public sealed class JsonhReader : IDisposable {
     private IEnumerable<Result<JsonhToken>> ReadCommentsAndWhitespace() {
         while (true) {
             // Whitespace
-            if (ReadWhitespace().TryGetError(out Error WhitespaceError)) {
-                yield return WhitespaceError;
-                yield break;
-            }
+            ReadWhitespace();
 
             // Comment
             if (Peek() is '#' or '/') {
@@ -874,11 +903,11 @@ public sealed class JsonhReader : IDisposable {
             StringBuilder.Append(Char.Value);
         }
     }
-    private Result ReadWhitespace() {
+    private void ReadWhitespace() {
         while (true) {
             // Peek char
             if (Peek() is not char Char) {
-                return Result.Success;
+                return;
             }
 
             // Whitespace
@@ -887,7 +916,7 @@ public sealed class JsonhReader : IDisposable {
             }
             // End of whitespace
             else {
-                return Result.Success;
+                return;
             }
         }
     }
@@ -899,16 +928,13 @@ public sealed class JsonhReader : IDisposable {
 
         // Number
         else if (Char is (>= '0' and <= '9') or ('-' or '+') or '.') {
-            if (ReadNumber(out string CharsRead).TryGetValue(out JsonhToken Number)) {
-                return Number;
-            }
-            return ReadQuotelessString(CharsRead);
+            return ReadNumberOrQuotelessString();
         }
         // String
         else if (Char is '"' or '\'') {
             return ReadString();
         }
-        // Quoteless String (or a named literal)
+        // Quoteless string (or a named literal)
         else {
             return ReadQuotelessString();
         }
@@ -931,6 +957,39 @@ public sealed class JsonhReader : IDisposable {
 
         // Parse unicode character from hex digits
         return uint.Parse(HexChars, NumberStyles.AllowHexSpecifier);
+    }
+    private bool DetectQuotelessString(out ReadOnlySpan<char> WhitespaceChars) {
+        // Read whitespace
+        using ValueStringBuilder StringBuilder = new();
+
+        while (true) {
+            // Read char
+            if (Peek() is not char Char) {
+                break;
+            }
+
+            // Newline
+            if (NewlineChars.Contains(Char)) {
+                // Quoteless strings cannot contain newlines
+                WhitespaceChars = StringBuilder.AsSpan();
+                return false;
+            }
+
+            // End of whitespace
+            if (!char.IsWhiteSpace(Char)) {
+                break;
+            }
+
+            // Whitespace
+            StringBuilder.Append(Char);
+            Read();
+        }
+
+        // End of whitespace
+        WhitespaceChars = StringBuilder.AsSpan();
+
+        // Found quoteless string if found non-reserved char
+        return Peek() is char NextChar && !ReservedChars.Contains(NextChar);
     }
     private char? Peek() {
         int Char = TextReader.Peek();
@@ -959,14 +1018,26 @@ public sealed class JsonhReader : IDisposable {
             return null;
         }
         // Match option
-        int OptionIndex = Options.IndexOf(Char);
-        if (OptionIndex < 0) {
+        if (!Options.Contains(Char)) {
             return null;
         }
         // Option matched
         Read();
-        return Options[OptionIndex];
+        return Char;
     }
+    /*private char? ReadWhen(Func<char, bool> Condition) {
+        // Peek char
+        if (Peek() is not char Char) {
+            return null;
+        }
+        // Match condition
+        if (!Condition(Char)) {
+            return null;
+        }
+        // Condition matched
+        Read();
+        return Char;
+    }*/
 }
 
 public record struct JsonhReaderOptions() {
