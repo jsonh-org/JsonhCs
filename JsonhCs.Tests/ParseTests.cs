@@ -8,7 +8,7 @@ public class ParseTests {
         string Jsonh = """
             "\U0001F47D and \uD83D\uDC7D"
             """;
-        string Element = new JsonhReader(Jsonh).ParseElement<string>().Value!;
+        string Element = JsonhReader.ParseElement<string>(Jsonh).Value!;
 
         Assert.Equal("👽 and 👽", Element);
     }
@@ -19,7 +19,7 @@ public class ParseTests {
                   Hello! Here's a quote: ". Now a double quote: "". And a triple quote! """. Escape: \\\U0001F47D.
                  """"
             """"";
-        string Element = new JsonhReader(Jsonh).ParseElement<string>().Value!;
+        string Element = JsonhReader.ParseElement<string>(Jsonh).Value!;
 
         Assert.Equal(" Hello! Here's a quote: \". Now a double quote: \"\". And a triple quote! \"\"\". Escape: \\👽.", Element);
     }
@@ -32,7 +32,7 @@ public class ParseTests {
                   4 5,6
                 ]
             """"";
-        JsonElement Element = new JsonhReader(Jsonh).ParseElement().Value;
+        JsonElement Element = JsonhReader.ParseElement(Jsonh).Value;
 
         Assert.Equal(5, Element.GetArrayLength());
         Assert.Equal(1, Element[0].Deserialize<int>(GlobalJsonOptions.Mini));
