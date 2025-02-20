@@ -786,19 +786,19 @@ public sealed class JsonhReader : IDisposable {
             StringBuilder.Append(Char);
 
             // Match named literal
-            if (StringBuilder.AsSpan().Equals("infinity", StringComparison.OrdinalIgnoreCase)) {
+            if (StringBuilder.Equals("infinity", StringComparison.OrdinalIgnoreCase)) {
                 return new JsonhToken(this, JsonTokenType.Number, StringBuilder.ToString());
             }
-            else if (StringBuilder.AsSpan().Equals("nan", StringComparison.OrdinalIgnoreCase)) {
+            else if (StringBuilder.Equals("nan", StringComparison.OrdinalIgnoreCase)) {
                 return new JsonhToken(this, JsonTokenType.Number, StringBuilder.ToString());
             }
-            else if (StringBuilder.AsSpan().Equals("null", StringComparison.OrdinalIgnoreCase)) {
+            else if (StringBuilder.Equals("null", StringComparison.OrdinalIgnoreCase)) {
                 return new JsonhToken(this, JsonTokenType.Null, StringBuilder.ToString());
             }
-            else if (StringBuilder.AsSpan().Equals("true", StringComparison.OrdinalIgnoreCase)) {
+            else if (StringBuilder.Equals("true", StringComparison.OrdinalIgnoreCase)) {
                 return new JsonhToken(this, JsonTokenType.True, StringBuilder.ToString());
             }
-            else if (StringBuilder.AsSpan().Equals("false", StringComparison.OrdinalIgnoreCase)) {
+            else if (StringBuilder.Equals("false", StringComparison.OrdinalIgnoreCase)) {
                 return new JsonhToken(this, JsonTokenType.False, StringBuilder.ToString());
             }
         }
