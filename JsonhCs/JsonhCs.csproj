@@ -12,7 +12,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="System.Text.Json" Version="9.0.2" />
-    <PackageReference Include="LinkDotNet.StringBuilder" Version="2.3.0" />
+    <PackageReference Include="LinkDotNet.StringBuilder" Version="2.4.0" />
     <PackageReference Include="ResultZero" Version="2.2.0" />
     <PackageReference Include="ExtendedNumerics.BigDecimal" Version="3000.0.3.40" />
   </ItemGroup>
