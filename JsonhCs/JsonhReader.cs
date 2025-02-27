@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using ExtendedNumerics;
 using LinkDotNet.StringBuilder;
 using ResultZero;
 
@@ -192,12 +193,15 @@ public sealed class JsonhReader : IDisposable {
             }
             // Number
             else if (Token.JsonType is JsonTokenType.Number) {
-                // TODO:
-                // A number node can't be created from a string yet, so create a string node instead.
-                // See https://github.com/dotnet/runtime/discussions/111373
-                JsonNode Node = JsonValue.Create(Token.Value);
-                if (SubmitNode(Node)) {
-                    return Node;
+                try {
+                    BigDecimal Result = JsonhNumberParser.Parse(Token.Value);
+                    JsonNode Node = JsonNode.Parse(Result.ToString())!;
+                    if (SubmitNode(Node)) {
+                        return Node;
+                    }
+                }
+                catch (Exception Ex) {
+                    return Ex;
                 }
             }
             // Start Object
@@ -548,7 +552,7 @@ public sealed class JsonhReader : IDisposable {
         int EndQuoteCounter = 0;
 
         // Read string
-        using ValueStringBuilder StringBuilder = new(stackalloc char[32]);
+        using ValueStringBuilder StringBuilder = new(stackalloc char[64]);
 
         while (true) {
             if (Read() is not char Char) {
@@ -726,7 +730,7 @@ public sealed class JsonhReader : IDisposable {
     }
     private Result<JsonhToken> ReadNumber(out ReadOnlySpan<char> PartialCharsRead) {
         // Read number
-        ValueStringBuilder StringBuilder = new(stackalloc char[32]);
+        ValueStringBuilder StringBuilder = new(stackalloc char[64]);
         using ValueStringBuilder ReadOnlyStringBuilder = StringBuilder; // Can't pass using variables by-ref
 
         // Read base
@@ -748,8 +752,8 @@ public sealed class JsonhReader : IDisposable {
             }
         }
 
-        // Read integer + fraction
-        if (ReadNumberCore(ref StringBuilder, BaseDigits).TryGetError(out Error NumberCoreError)) {
+        // Read main number
+        if (ReadNumberNoExponent(ref StringBuilder, BaseDigits).TryGetError(out Error NumberCoreError)) {
             PartialCharsRead = StringBuilder.ToString();
             return NumberCoreError;
         }
@@ -758,8 +762,8 @@ public sealed class JsonhReader : IDisposable {
         if (ReadAny('e', 'E') is char ExponentChar) {
             StringBuilder.Append(ExponentChar);
 
-            // Read integer + fraction
-            if (ReadNumberCore(ref StringBuilder, BaseDigits).TryGetError(out Error ExponentCoreError)) {
+            // Read exponent number
+            if (ReadNumberNoExponent(ref StringBuilder, BaseDigits).TryGetError(out Error ExponentCoreError)) {
                 PartialCharsRead = string.Concat(StringBuilder.AsSpan(), StringBuilder.ToString());
                 return ExponentCoreError;
             }
@@ -769,7 +773,7 @@ public sealed class JsonhReader : IDisposable {
         PartialCharsRead = default;
         return new JsonhToken(this, JsonTokenType.Number, StringBuilder.ToString());
     }
-    private Result ReadNumberCore(ref ValueStringBuilder StringBuilder, ReadOnlySpan<char> BaseDigits) {
+    private Result ReadNumberNoExponent(ref ValueStringBuilder StringBuilder, ReadOnlySpan<char> BaseDigits) {
         // Read sign
         ReadAny('-', '+');
 
@@ -840,7 +844,7 @@ public sealed class JsonhReader : IDisposable {
     }
     private Result<JsonhToken> ReadQuotelessString(ReadOnlySpan<char> InitialChars = default) {
         // Read quoteless string
-        using ValueStringBuilder StringBuilder = new(stackalloc char[32]);
+        using ValueStringBuilder StringBuilder = new(stackalloc char[64]);
         StringBuilder.Append(InitialChars);
 
         while (true) {
@@ -923,7 +927,7 @@ public sealed class JsonhReader : IDisposable {
         }
 
         // Read comment
-        using ValueStringBuilder StringBuilder = new(stackalloc char[32]);
+        using ValueStringBuilder StringBuilder = new(stackalloc char[64]);
 
         while (true) {
             // Peek char
