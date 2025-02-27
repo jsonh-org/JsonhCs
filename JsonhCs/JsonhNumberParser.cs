@@ -111,10 +111,11 @@ public static class JsonhNumberParser {
             }
 
             // Get magnitude of current digit column
-            int Magnitude = Digits.Length - Index;
+            int ColumnNumber = Digits.Length - 1 - Index;
+            BigInteger ColumnMagnitude = BigInteger.Pow(BaseDigits.Length, ColumnNumber);
 
             // Add value of column
-            Integer += (BigInteger)DigitInt * (BigInteger)Magnitude;
+            Integer += (BigInteger)DigitInt * ColumnMagnitude;
         }
 
         // Apply sign
