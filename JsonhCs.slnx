@@ -2,6 +2,7 @@
   <Folder Name="/Solution Items/">
     <File Path="README.md" />
   </Folder>
-  <Project Path="JsonhCs.Tests/JsonhCs.Tests.csproj" Id="fb0a5124-83e5-4cb1-b76f-da902a5b84aa" />
+  <Project Path="JsonhCs.Benchmarks/JsonhCs.Benchmarks.csproj" />
+  <Project Path="JsonhCs.Tests/JsonhCs.Tests.csproj" />
   <Project Path="JsonhCs/JsonhCs.csproj" />
 </Solution>

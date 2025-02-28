@@ -10,7 +10,8 @@ public static class JsonhNumberParser {
     /// Input: <c>+5.2e3.0</c><br/>
     /// Output: <c>5200</c>
     /// </summary>
-    public static BigDecimal Parse(string JsonhNumber) {
+    /// <param name="Precision">Used when a fractional exponent is given.</param>
+    public static BigDecimal Parse(string JsonhNumber, int Precision = 10) {
         // Decimal
         string BaseDigits = "0123456789";
         // Hexadecimal
@@ -32,14 +33,14 @@ public static class JsonhNumberParser {
         // Remove underscores
         JsonhNumber = JsonhNumber.Replace("_", "");
 
-        // Parse number of base
-        return ParseFractionalNumberWithExponent(JsonhNumber, BaseDigits);
+        // Parse number with base digits
+        return ParseFractionalNumberWithExponent(JsonhNumber, BaseDigits, Precision);
     }
 
     /// <summary>
     /// Converts a fractional number with an exponent (e.g. <c>12.3e4.5</c>) from the given base (e.g. <c>01234567</c>) to a base-10 decimal.
     /// </summary>
-    private static BigDecimal ParseFractionalNumberWithExponent(ReadOnlySpan<char> Digits, ReadOnlySpan<char> BaseDigits) {
+    private static BigDecimal ParseFractionalNumberWithExponent(ReadOnlySpan<char> Digits, ReadOnlySpan<char> BaseDigits, int Precision) {
         // Find exponent
         int DotIndex = Digits.IndexOfAny('e', 'E');
         // If no exponent then normalize real
@@ -47,12 +48,16 @@ public static class JsonhNumberParser {
             return ParseFractionalNumber(Digits, BaseDigits);
         }
 
-        // Get parts of number
+        // Get mantissa and exponent
         ReadOnlySpan<char> MantissaPart = Digits[..DotIndex];
         ReadOnlySpan<char> ExponentPart = Digits[(DotIndex + 1)..];
 
-        // Normalize each part and combine parts
-        return BigDecimal.Parse(ParseFractionalNumber(MantissaPart, BaseDigits) + "E" + ParseFractionalNumber(ExponentPart, BaseDigits));
+        // Decimalize mantissa and exponent
+        BigDecimal Mantissa = ParseFractionalNumber(MantissaPart, BaseDigits);
+        BigDecimal Exponent = ParseFractionalNumber(ExponentPart, BaseDigits);
+
+        // Multiply mantissa by 10 ^ exponent
+        return Mantissa * BigDecimal.Pow(10, Exponent, Precision);
     }
     /// <summary>
     /// Converts a fractional number (e.g. <c>123.45</c>) from the given base (e.g. <c>01234567</c>) to a base-10 decimal.
@@ -74,8 +79,12 @@ public static class JsonhNumberParser {
         ReadOnlySpan<char> WholePart = Digits[..DotIndex];
         ReadOnlySpan<char> FractionPart = Digits[(DotIndex + 1)..];
 
-        // Normalize each part and combine parts
-        return BigDecimal.Parse(ParseWholeNumber(WholePart, BaseDigits) + "." + ParseWholeNumber(FractionPart, BaseDigits));
+        // Decimalize parts of number
+        BigInteger Whole = ParseWholeNumber(WholePart, BaseDigits);
+        BigInteger Fraction = ParseWholeNumber(FractionPart, BaseDigits);
+
+        // Combine whole and fraction
+        return BigDecimal.Parse(Whole + "." + Fraction);
     }
     /// <summary>
     /// Converts a whole number (e.g. <c>12345</c>) from the given base (e.g. <c>01234567</c>) to a base-10 integer.
@@ -87,13 +96,13 @@ public static class JsonhNumberParser {
         }
 
         // Get sign
-        string Sign = "";
+        int Sign = 1;
         if (Digits.StartsWith("-")) {
-            Sign = "-";
+            Sign = -1;
             Digits = Digits[1..];
         }
         else if (Digits.StartsWith("+")) {
-            Sign = "+";
+            Sign = 1;
             Digits = Digits[1..];
         }
 
@@ -118,8 +127,8 @@ public static class JsonhNumberParser {
         }
 
         // Apply sign
-        if (Sign is "-") {
-            Integer *= -1;
+        if (Sign != 1) {
+            Integer *= Sign;
         }
         return Integer;
     }

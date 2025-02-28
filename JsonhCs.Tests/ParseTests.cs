@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using ExtendedNumerics;
+using System.Text.Json;
 
 namespace JsonhCs.Tests;
 
@@ -40,5 +41,9 @@ public class ParseTests {
         Assert.Equal(3, Element[2].Deserialize<int>(GlobalJsonOptions.Mini));
         Assert.Equal("4 5", Element[3].Deserialize<string>(GlobalJsonOptions.Mini));
         Assert.Equal(6, Element[4].Deserialize<int>(GlobalJsonOptions.Mini));
+    }
+    [Fact]
+    public void NumberParserTest() {
+        Assert.Equal(3014, BigDecimal.Truncate(JsonhNumberParser.Parse("1.2e3.4")));
     }
 }
