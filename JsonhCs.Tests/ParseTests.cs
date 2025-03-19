@@ -35,13 +35,13 @@ public class ParseTests {
     }
     [Fact]
     public void ArrayTest() {
-        string Jsonh = """""  
-                [
-                  1, 2,
-                  3
-                  4 5,6
-                ]
-            """"";
+        string Jsonh = """
+            [
+                1, 2,
+                3
+                4 5,6
+            ]
+            """;
         JsonElement Element = JsonhReader.ParseElement(Jsonh).Value;
 
         Assert.Equal(5, Element.GetArrayLength());
@@ -54,5 +54,17 @@ public class ParseTests {
     [Fact]
     public void NumberParserTest() {
         Assert.Equal(3014, BigReal.Truncate(JsonhNumberParser.Parse("1.2e3.4")));
+    }
+    [Fact]
+    public void BracelessObjectTest() {
+        string Jsonh = """""  
+            a: b
+            c: d
+            """"";
+        JsonElement Element = JsonhReader.ParseElement(Jsonh).Value;
+
+        Assert.Equal(2, Element.GetPropertyCount());
+        Assert.Equal("b", Element.GetProperty("a").Deserialize<string>(GlobalJsonOptions.Mini));
+        Assert.Equal("d", Element.GetProperty("c").Deserialize<string>(GlobalJsonOptions.Mini));
     }
 }
