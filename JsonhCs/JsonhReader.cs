@@ -121,7 +121,7 @@ public sealed class JsonhReader : IDisposable {
     /// </summary>
     [RequiresUnreferencedCode(UnreferencedCodeMessage), RequiresDynamicCode(UnreferencedCodeMessage)]
     public Result<T?> ParseElement<T>() {
-        return ParseNode().Try(Value => Value.Deserialize<T>(GlobalJsonOptions.Mini));
+        return ParseNode().Try(Value => Value.Deserialize<T>(JsonhSerializerPresets.Mini));
     }
     /// <inheritdoc cref="ParseElement{T}()"/>
     [RequiresUnreferencedCode(UnreferencedCodeMessage), RequiresDynamicCode(UnreferencedCodeMessage)]

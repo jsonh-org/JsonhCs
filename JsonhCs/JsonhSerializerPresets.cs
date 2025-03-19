@@ -7,7 +7,7 @@ namespace JsonhCs;
 /// <summary>
 /// Presets for <see cref="JsonSerializerOptions"/>.
 /// </summary>
-public static class GlobalJsonOptions {
+public static class JsonhSerializerPresets {
     /// <summary>
     /// A preset for reading and writing JSON with minimal formatting.<br/>
     /// <list type="bullet">
