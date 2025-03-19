@@ -29,4 +29,13 @@ public class EdgeCaseTests {
             """;
         JsonhReader.ParseElement<string[]>(Jsonh).IsError.ShouldBeTrue();
     }
+    [Fact]
+    public void QuotelessStringsLeadingTrailingWhitespaceTest() {
+        string Jsonh = """
+            [
+              a b  , 
+            ]
+            """;
+        JsonhReader.ParseElement<string[]>(Jsonh).Value.ShouldBe(["a b"]);
+    }
 }

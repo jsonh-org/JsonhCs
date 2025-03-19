@@ -881,6 +881,14 @@ public sealed class JsonhReader : IDisposable {
             }
         }
 
+        // Ensure not empty
+        if (StringBuilder.AsSpan().IsEmpty) {
+            return new Error("Empty quoteless string");
+        }
+
+        // Trim trailing whitespace
+        StringBuilder.TrimEnd();
+
         // Match named literal
         if (IsNamedLiteralPossible) {
             if (StringBuilder.Equals("null")) {
@@ -892,11 +900,6 @@ public sealed class JsonhReader : IDisposable {
             else if (StringBuilder.Equals("false")) {
                 return new JsonhToken(this, JsonTokenType.False, StringBuilder.ToString());
             }
-        }
-
-        // Ensure not empty
-        if (StringBuilder.AsSpan().IsEmpty) {
-            return new Error("Empty quoteless string");
         }
 
         // End of quoteless string
@@ -998,7 +1001,7 @@ public sealed class JsonhReader : IDisposable {
         else if (Char is '"' or '\'') {
             return ReadString();
         }
-        // Quoteless string (or a named literal)
+        // Quoteless string (or named literal)
         else {
             return ReadQuotelessString();
         }
