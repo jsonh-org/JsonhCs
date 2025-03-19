@@ -1,5 +1,7 @@
 # JsonhCs
 
+[![NuGet](https://img.shields.io/nuget/v/JsonhCs.svg)](https://www.nuget.org/packages/JsonhCs)
+
 **JSON for Humans.**
 
 JSON is great. Until you miss that trailing comma... or want to use comments. What about multiline strings?
