@@ -19,4 +19,14 @@ public class EdgeCaseTests {
             """;
         Assert.True(JsonhReader.ParseElement<string[]>(Jsonh).IsError);
     }
+    [Fact]
+    public void NestedBracelessObjectTest() {
+        string Jsonh = """
+            [
+                a: b
+                c: d
+            ]
+            """;
+        Assert.True(JsonhReader.ParseElement<string[]>(Jsonh).IsError);
+    }
 }

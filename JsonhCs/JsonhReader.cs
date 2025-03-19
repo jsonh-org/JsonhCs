@@ -894,6 +894,11 @@ public sealed class JsonhReader : IDisposable {
             }
         }
 
+        // Ensure not empty
+        if (StringBuilder.AsSpan().IsEmpty) {
+            return new Error("Empty quoteless string");
+        }
+
         // End of quoteless string
         return new JsonhToken(this, JsonTokenType.String, StringBuilder.ToString());
     }
