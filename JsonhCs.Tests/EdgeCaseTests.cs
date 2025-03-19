@@ -12,4 +12,11 @@ public class EdgeCaseTests {
         Assert.Equal("null b", Element[1]);
         Assert.Null(Element[2]);
     }
+    [Fact]
+    public void BracelessObjectWithInvalidValueTest() {
+        string Jsonh = """
+            a: {
+            """;
+        Assert.True(JsonhReader.ParseElement<string[]>(Jsonh).IsError);
+    }
 }
