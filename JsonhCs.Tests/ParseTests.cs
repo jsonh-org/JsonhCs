@@ -1,5 +1,5 @@
-﻿using ExtendedNumerics;
-using System.Text.Json;
+﻿using System.Text.Json;
+using ExtendedNumerics;
 
 namespace JsonhCs.Tests;
 
@@ -11,7 +11,7 @@ public class ParseTests {
             """;
         string Element = JsonhReader.ParseElement<string>(Jsonh).Value!;
 
-        Assert.Equal("👽 and 👽", Element);
+        Element.ShouldBe("👽 and 👽");
     }
     [Fact]
     public void QuotelessEscapeSequenceTest() {
@@ -20,7 +20,7 @@ public class ParseTests {
             """;
         string Element = JsonhReader.ParseElement<string>(Jsonh).Value!;
 
-        Assert.Equal("👽 and 👽", Element);
+        Element.ShouldBe("👽 and 👽");
     }
     [Fact]
     public void MultiQuotedStringTest() {
@@ -31,7 +31,7 @@ public class ParseTests {
             """"";
         string Element = JsonhReader.ParseElement<string>(Jsonh).Value!;
 
-        Assert.Equal(" Hello! Here's a quote: \". Now a double quote: \"\". And a triple quote! \"\"\". Escape: \\👽.", Element);
+        Element.ShouldBe(" Hello! Here's a quote: \". Now a double quote: \"\". And a triple quote! \"\"\". Escape: \\👽.");
     }
     [Fact]
     public void ArrayTest() {
@@ -44,16 +44,16 @@ public class ParseTests {
             """;
         JsonElement Element = JsonhReader.ParseElement(Jsonh).Value;
 
-        Assert.Equal(5, Element.GetArrayLength());
-        Assert.Equal(1, Element[0].Deserialize<int>(GlobalJsonOptions.Mini));
-        Assert.Equal(2, Element[1].Deserialize<int>(GlobalJsonOptions.Mini));
-        Assert.Equal(3, Element[2].Deserialize<int>(GlobalJsonOptions.Mini));
-        Assert.Equal("4 5", Element[3].Deserialize<string>(GlobalJsonOptions.Mini));
-        Assert.Equal(6, Element[4].Deserialize<int>(GlobalJsonOptions.Mini));
+        Element.GetArrayLength().ShouldBe(5);
+        Element[0].Deserialize<int>(GlobalJsonOptions.Mini).ShouldBe(1);
+        Element[1].Deserialize<int>(GlobalJsonOptions.Mini).ShouldBe(2);
+        Element[2].Deserialize<int>(GlobalJsonOptions.Mini).ShouldBe(3);
+        Element[3].Deserialize<string>(GlobalJsonOptions.Mini).ShouldBe("4 5");
+        Element[4].Deserialize<int>(GlobalJsonOptions.Mini).ShouldBe(6);
     }
     [Fact]
     public void NumberParserTest() {
-        Assert.Equal(3014, BigReal.Truncate(JsonhNumberParser.Parse("1.2e3.4")));
+        BigReal.Truncate(JsonhNumberParser.Parse("1.2e3.4")).ShouldBe(3014);
     }
     [Fact]
     public void BracelessObjectTest() {
@@ -63,8 +63,8 @@ public class ParseTests {
             """"";
         JsonElement Element = JsonhReader.ParseElement(Jsonh).Value;
 
-        Assert.Equal(2, Element.GetPropertyCount());
-        Assert.Equal("b", Element.GetProperty("a").Deserialize<string>(GlobalJsonOptions.Mini));
-        Assert.Equal("d", Element.GetProperty("c").Deserialize<string>(GlobalJsonOptions.Mini));
+        Element.GetPropertyCount().ShouldBe(2);
+        Element.GetProperty("a").Deserialize<string>(GlobalJsonOptions.Mini).ShouldBe("b");
+        Element.GetProperty("c").Deserialize<string>(GlobalJsonOptions.Mini).ShouldBe("d");
     }
 }

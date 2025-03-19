@@ -8,16 +8,16 @@ public class EdgeCaseTests {
             """;
         string?[] Element = JsonhReader.ParseElement<string?[]>(Jsonh).Value!;
 
-        Assert.Equal("nulla", Element[0]);
-        Assert.Equal("null b", Element[1]);
-        Assert.Null(Element[2]);
+        Element[0].ShouldBe("nulla");
+        Element[1].ShouldBe("null b");
+        Element[2].ShouldBeNull();
     }
     [Fact]
     public void BracelessObjectWithInvalidValueTest() {
         string Jsonh = """
             a: {
             """;
-        Assert.True(JsonhReader.ParseElement<string[]>(Jsonh).IsError);
+        JsonhReader.ParseElement<string[]>(Jsonh).IsError.ShouldBeTrue();
     }
     [Fact]
     public void NestedBracelessObjectTest() {
@@ -27,6 +27,6 @@ public class EdgeCaseTests {
                 c: d
             ]
             """;
-        Assert.True(JsonhReader.ParseElement<string[]>(Jsonh).IsError);
+        JsonhReader.ParseElement<string[]>(Jsonh).IsError.ShouldBeTrue();
     }
 }

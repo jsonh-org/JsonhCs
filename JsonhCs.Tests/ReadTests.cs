@@ -1,5 +1,5 @@
-﻿using ResultZero;
-using System.Text.Json;
+﻿using System.Text.Json;
+using ResultZero;
 
 namespace JsonhCs.Tests;
 
@@ -14,12 +14,12 @@ public class ReadTests {
 
         Result<JsonhToken>[] Tokens = [.. new JsonhReader(Jsonh).ReadElement()];
 
-        Assert.All(Tokens, Token => Assert.True(Token.IsValue));
-        Assert.Equal(JsonTokenType.StartObject, Tokens[0].Value.JsonType);
-        Assert.Equal(JsonTokenType.PropertyName, Tokens[1].Value.JsonType);
-        Assert.Equal("a", Tokens[1].Value.Value);
-        Assert.Equal(JsonTokenType.String, Tokens[2].Value.JsonType);
-        Assert.Equal("b", Tokens[2].Value.Value);
-        Assert.Equal(JsonTokenType.EndObject, Tokens[3].Value.JsonType);
+        Tokens.ShouldAllBe(Token => Token.IsValue);
+        Tokens[0].Value.JsonType.ShouldBe(JsonTokenType.StartObject);
+        Tokens[1].Value.JsonType.ShouldBe(JsonTokenType.PropertyName);
+        Tokens[1].Value.Value.ShouldBe("a");
+        Tokens[2].Value.JsonType.ShouldBe(JsonTokenType.String);
+        Tokens[2].Value.Value.ShouldBe("b");
+        Tokens[3].Value.JsonType.ShouldBe(JsonTokenType.EndObject);
     }
 }
