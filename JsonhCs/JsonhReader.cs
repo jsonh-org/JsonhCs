@@ -764,7 +764,7 @@ public sealed class JsonhReader : IDisposable {
 
             // Read exponent number
             if (ReadNumberNoExponent(ref StringBuilder, BaseDigits).TryGetError(out Error ExponentCoreError)) {
-                PartialCharsRead = string.Concat(StringBuilder.AsSpan(), StringBuilder.ToString());
+                PartialCharsRead = StringBuilder.ToString();
                 return ExponentCoreError;
             }
         }
