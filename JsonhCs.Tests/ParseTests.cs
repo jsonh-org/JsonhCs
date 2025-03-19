@@ -45,11 +45,11 @@ public class ParseTests {
         JsonElement Element = JsonhReader.ParseElement(Jsonh).Value;
 
         Element.GetArrayLength().ShouldBe(5);
-        Element[0].Deserialize<int>(JsonhSerializerPresets.Mini).ShouldBe(1);
-        Element[1].Deserialize<int>(JsonhSerializerPresets.Mini).ShouldBe(2);
-        Element[2].Deserialize<int>(JsonhSerializerPresets.Mini).ShouldBe(3);
-        Element[3].Deserialize<string>(JsonhSerializerPresets.Mini).ShouldBe("4 5");
-        Element[4].Deserialize<int>(JsonhSerializerPresets.Mini).ShouldBe(6);
+        Element[0].Deserialize<int>(JsonhReader.MiniJson).ShouldBe(1);
+        Element[1].Deserialize<int>(JsonhReader.MiniJson).ShouldBe(2);
+        Element[2].Deserialize<int>(JsonhReader.MiniJson).ShouldBe(3);
+        Element[3].Deserialize<string>(JsonhReader.MiniJson).ShouldBe("4 5");
+        Element[4].Deserialize<int>(JsonhReader.MiniJson).ShouldBe(6);
     }
     [Fact]
     public void NumberParserTest() {
@@ -64,7 +64,7 @@ public class ParseTests {
         JsonElement Element = JsonhReader.ParseElement(Jsonh).Value;
 
         Element.GetPropertyCount().ShouldBe(2);
-        Element.GetProperty("a").Deserialize<string>(JsonhSerializerPresets.Mini).ShouldBe("b");
-        Element.GetProperty("c").Deserialize<string>(JsonhSerializerPresets.Mini).ShouldBe("d");
+        Element.GetProperty("a").Deserialize<string>(JsonhReader.MiniJson).ShouldBe("b");
+        Element.GetProperty("c").Deserialize<string>(JsonhReader.MiniJson).ShouldBe("d");
     }
 }

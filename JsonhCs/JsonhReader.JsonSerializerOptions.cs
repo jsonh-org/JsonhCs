@@ -7,7 +7,7 @@ namespace JsonhCs;
 /// <summary>
 /// Presets for <see cref="JsonSerializerOptions"/>.
 /// </summary>
-public static class JsonhSerializerPresets {
+partial class JsonhReader {
     /// <summary>
     /// A preset for reading and writing JSON with minimal formatting.<br/>
     /// <list type="bullet">
@@ -19,7 +19,7 @@ public static class JsonhSerializerPresets {
     /// <item>Uses relaxed JSON escaping</item>
     /// </list>
     /// </summary>
-    public static JsonSerializerOptions Mini { get; } = new() {
+    public static JsonSerializerOptions MiniJson { get; } = new() {
         NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals | JsonNumberHandling.AllowReadingFromString,
         AllowTrailingCommas = true,
         IncludeFields = true,
@@ -39,7 +39,7 @@ public static class JsonhSerializerPresets {
     /// <item>Writes indents as tabs</item>
     /// </list>
     /// </summary>
-    public static JsonSerializerOptions Pretty { get; } = new(Mini) {
+    public static JsonSerializerOptions PrettyJson { get; } = new(MiniJson) {
         WriteIndented = true,
         IndentCharacter = '\t',
         IndentSize = 1,

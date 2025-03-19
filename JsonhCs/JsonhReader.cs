@@ -10,7 +10,7 @@ using ResultZero;
 
 namespace JsonhCs;
 
-public sealed class JsonhReader : IDisposable {
+public sealed partial class JsonhReader : IDisposable {
     /// <summary>
     /// The text reader to read characters from.
     /// </summary>
@@ -121,7 +121,7 @@ public sealed class JsonhReader : IDisposable {
     /// </summary>
     [RequiresUnreferencedCode(UnreferencedCodeMessage), RequiresDynamicCode(UnreferencedCodeMessage)]
     public Result<T?> ParseElement<T>() {
-        return ParseNode().Try(Value => Value.Deserialize<T>(JsonhSerializerPresets.Mini));
+        return ParseNode().Try(Value => Value.Deserialize<T>(MiniJson));
     }
     /// <inheritdoc cref="ParseElement{T}()"/>
     [RequiresUnreferencedCode(UnreferencedCodeMessage), RequiresDynamicCode(UnreferencedCodeMessage)]
