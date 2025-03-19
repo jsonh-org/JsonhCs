@@ -6,10 +6,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <NoWarn>IDE0290;IDE0130</NoWarn>
+  </PropertyGroup>
 
+  <PropertyGroup>
     <IsAotCompatible>True</IsAotCompatible>
     <IsTrimmable>True</IsTrimmable>
   </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="BigReal" Version="4.0.0" />
     <PackageReference Include="System.Text.Json" Version="9.0.3" />
