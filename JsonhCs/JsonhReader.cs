@@ -22,6 +22,10 @@ public sealed partial class JsonhReader : IDisposable {
     /// The options to use when reading JSONH.
     /// </summary>
     public JsonhReaderOptions Options { get; set; }
+    /// <summary>
+    /// The number of characters read from <see cref="TextReader"/>.
+    /// </summary>
+    public long CharCounter { get; set; }
 
     /// <summary>
     /// Characters that cannot be used in quoteless strings.
@@ -1156,6 +1160,7 @@ public sealed partial class JsonhReader : IDisposable {
         if (Char < 0) {
             return null;
         }
+        CharCounter++;
         return (char)Char;
     }
     private bool ReadOne(char Char) {
