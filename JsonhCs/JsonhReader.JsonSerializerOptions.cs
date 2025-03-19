@@ -4,9 +4,6 @@ using System.Text.Encodings.Web;
 
 namespace JsonhCs;
 
-/// <summary>
-/// Presets for <see cref="JsonSerializerOptions"/>.
-/// </summary>
 partial class JsonhReader {
     /// <summary>
     /// A preset for reading and writing JSON with minimal formatting.<br/>

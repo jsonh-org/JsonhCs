@@ -10,6 +10,9 @@ using ResultZero;
 
 namespace JsonhCs;
 
+/// <summary>
+/// A reader that reads JSONH tokens from a <see cref="System.IO.TextReader"/>.
+/// </summary>
 public sealed partial class JsonhReader : IDisposable {
     /// <summary>
     /// The text reader to read characters from.
@@ -285,6 +288,9 @@ public sealed partial class JsonhReader : IDisposable {
         // Path not found
         return false;
     }
+    /// <summary>
+    /// Reads a single element from the reader.
+    /// </summary>
     public IEnumerable<Result<JsonhToken>> ReadElement() {
         // Comments & whitespace
         foreach (Result<JsonhToken> Token in ReadCommentsAndWhitespace()) {
@@ -362,6 +368,7 @@ public sealed partial class JsonhReader : IDisposable {
             }
         }
     }
+
     private IEnumerable<Result<JsonhToken>> ReadObject() {
         // Opening brace
         if (!ReadOne('{')) {
@@ -1171,21 +1178,11 @@ public sealed partial class JsonhReader : IDisposable {
         Read();
         return Char;
     }
-    /*private char? ReadWhen(Func<char, bool> Condition) {
-        // Peek char
-        if (Peek() is not char Char) {
-            return null;
-        }
-        // Match condition
-        if (!Condition(Char)) {
-            return null;
-        }
-        // Condition matched
-        Read();
-        return Char;
-    }*/
 }
 
+/// <summary>
+/// Options for a <see cref="JsonhReader"/>.
+/// </summary>
 public record struct JsonhReaderOptions() {
     /// <summary>
     /// Enables/disables parsing unclosed inputs.
@@ -1198,14 +1195,23 @@ public record struct JsonhReaderOptions() {
     /// This is potentially useful for large language models that stream responses.<br/>
     /// Only some tokens can be incomplete in this mode, so it should not be relied upon.
     /// </remarks>
-    public bool IncompleteInputs { get; set; }
+    public bool IncompleteInputs { get; set; } = false;
 }
 
 /// <summary>
 /// A single JSONH token with a <see cref="JsonTokenType"/>.
 /// </summary>
 public readonly record struct JsonhToken(JsonhReader Reader, JsonTokenType JsonType, string Value = "") {
+    /// <summary>
+    /// The <see cref="JsonhReader"/> that read the token.
+    /// </summary>
     public JsonhReader Reader { get; } = Reader;
+    /// <summary>
+    /// The type of the token.
+    /// </summary>
     public JsonTokenType JsonType { get; } = JsonType;
+    /// <summary>
+    /// The value of the token, or an empty string.
+    /// </summary>
     public string Value { get; } = Value;
 }

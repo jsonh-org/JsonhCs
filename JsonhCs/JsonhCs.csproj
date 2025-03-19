@@ -6,7 +6,11 @@
     <RootNamespace>JsonhCs</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <NoWarn>IDE0290;IDE0130</NoWarn>
+
+    <!-- IDE0290: Use primary constructor -->
+    <!-- IDE0130: Namespace does not match folder structure -->
+    <!-- CS1573: Parameter has no matching param tag -->
+    <NoWarn>IDE0290;IDE0130;CS1573</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup>

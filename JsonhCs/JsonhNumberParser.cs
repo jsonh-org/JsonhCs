@@ -3,6 +3,9 @@ using ExtendedNumerics;
 
 namespace JsonhCs;
 
+/// <summary>
+/// Methods for parsing JSONH numbers.
+/// </summary>
 public static class JsonhNumberParser {
     /// <summary>
     /// Converts a JSONH number to a base-10 real.
