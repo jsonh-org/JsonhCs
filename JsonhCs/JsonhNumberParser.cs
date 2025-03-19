@@ -10,8 +10,8 @@ public static class JsonhNumberParser {
     /// Input: <c>+5.2e3.0</c><br/>
     /// Output: <c>5200</c>
     /// </summary>
-    /// <param name="Precision">Used when a fractional exponent is given.</param>
-    public static BigReal Parse(string JsonhNumber, int Precision = 10) {
+    /// <param name="Decimals">Number of decimal places to use when a fractional exponent is given.</param>
+    public static BigReal Parse(string JsonhNumber, int Decimals = 15) {
         // Decimal
         string BaseDigits = "0123456789";
         // Hexadecimal
@@ -34,13 +34,13 @@ public static class JsonhNumberParser {
         JsonhNumber = JsonhNumber.Replace("_", "");
 
         // Parse number with base digits
-        return ParseFractionalNumberWithExponent(JsonhNumber, BaseDigits, Precision);
+        return ParseFractionalNumberWithExponent(JsonhNumber, BaseDigits, Decimals);
     }
 
     /// <summary>
     /// Converts a fractional number with an exponent (e.g. <c>12.3e4.5</c>) from the given base (e.g. <c>01234567</c>) to a base-10 real.
     /// </summary>
-    private static BigReal ParseFractionalNumberWithExponent(ReadOnlySpan<char> Digits, ReadOnlySpan<char> BaseDigits, int Precision) {
+    private static BigReal ParseFractionalNumberWithExponent(ReadOnlySpan<char> Digits, ReadOnlySpan<char> BaseDigits, int Decimals) {
         // Find exponent
         int DotIndex = Digits.IndexOfAny('e', 'E');
         // If no exponent then normalize real
@@ -57,7 +57,7 @@ public static class JsonhNumberParser {
         BigReal Exponent = ParseFractionalNumber(ExponentPart, BaseDigits);
 
         // Multiply mantissa by 10 ^ exponent
-        return Mantissa * BigReal.Pow(10, Exponent, Precision);
+        return Mantissa * BigReal.Pow(10, Exponent, Decimals);
     }
     /// <summary>
     /// Converts a fractional number (e.g. <c>123.45</c>) from the given base (e.g. <c>01234567</c>) to a base-10 real.
