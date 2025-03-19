@@ -11,7 +11,7 @@ public static class JsonhNumberParser {
     /// Output: <c>5200</c>
     /// </summary>
     /// <param name="Precision">Used when a fractional exponent is given.</param>
-    public static BigDecimal Parse(string JsonhNumber, int Precision = 10) {
+    public static BigReal Parse(string JsonhNumber, int Precision = 10) {
         // Decimal
         string BaseDigits = "0123456789";
         // Hexadecimal
@@ -40,7 +40,7 @@ public static class JsonhNumberParser {
     /// <summary>
     /// Converts a fractional number with an exponent (e.g. <c>12.3e4.5</c>) from the given base (e.g. <c>01234567</c>) to a base-10 decimal.
     /// </summary>
-    private static BigDecimal ParseFractionalNumberWithExponent(ReadOnlySpan<char> Digits, ReadOnlySpan<char> BaseDigits, int Precision) {
+    private static BigReal ParseFractionalNumberWithExponent(ReadOnlySpan<char> Digits, ReadOnlySpan<char> BaseDigits, int Precision) {
         // Find exponent
         int DotIndex = Digits.IndexOfAny('e', 'E');
         // If no exponent then normalize real
@@ -53,19 +53,19 @@ public static class JsonhNumberParser {
         ReadOnlySpan<char> ExponentPart = Digits[(DotIndex + 1)..];
 
         // Decimalize mantissa and exponent
-        BigDecimal Mantissa = ParseFractionalNumber(MantissaPart, BaseDigits);
-        BigDecimal Exponent = ParseFractionalNumber(ExponentPart, BaseDigits);
+        BigReal Mantissa = ParseFractionalNumber(MantissaPart, BaseDigits);
+        BigReal Exponent = ParseFractionalNumber(ExponentPart, BaseDigits);
 
         // Multiply mantissa by 10 ^ exponent
-        return Mantissa * BigDecimal.Pow(10, Exponent, Precision);
+        return Mantissa * BigReal.Pow(10, Exponent, Precision);
     }
     /// <summary>
     /// Converts a fractional number (e.g. <c>123.45</c>) from the given base (e.g. <c>01234567</c>) to a base-10 decimal.
     /// </summary>
-    private static BigDecimal ParseFractionalNumber(ReadOnlySpan<char> Digits, ReadOnlySpan<char> BaseDigits) {
+    private static BigReal ParseFractionalNumber(ReadOnlySpan<char> Digits, ReadOnlySpan<char> BaseDigits) {
         // Optimization for base-10 digits
         if (BaseDigits is "0123456789") {
-            return BigDecimal.Parse(Digits.ToString()); // TODO: Pass span not string when overload is added
+            return BigReal.Parse(Digits);
         }
 
         // Find dot
@@ -84,7 +84,7 @@ public static class JsonhNumberParser {
         BigInteger Fraction = ParseWholeNumber(FractionPart, BaseDigits);
 
         // Combine whole and fraction
-        return BigDecimal.Parse(Whole + "." + Fraction);
+        return BigReal.Parse(Whole + "." + Fraction);
     }
     /// <summary>
     /// Converts a whole number (e.g. <c>12345</c>) from the given base (e.g. <c>01234567</c>) to a base-10 integer.

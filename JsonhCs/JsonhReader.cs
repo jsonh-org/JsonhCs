@@ -194,7 +194,7 @@ public sealed class JsonhReader : IDisposable {
             // Number
             else if (Token.JsonType is JsonTokenType.Number) {
                 try {
-                    BigDecimal Result = JsonhNumberParser.Parse(Token.Value);
+                    BigReal Result = JsonhNumberParser.Parse(Token.Value);
                     JsonNode Node = JsonNode.Parse(Result.ToString())!;
                     if (SubmitNode(Node)) {
                         return Node;

@@ -44,6 +44,6 @@ public class ParseTests {
     }
     [Fact]
     public void NumberParserTest() {
-        Assert.Equal(3014, BigDecimal.Truncate(JsonhNumberParser.Parse("1.2e3.4")));
+        Assert.Equal(3014, BigReal.Truncate(JsonhNumberParser.Parse("1.2e3.4")));
     }
 }
