@@ -552,7 +552,8 @@ public sealed class JsonhReader : IDisposable {
         int EndQuoteCounter = 0;
 
         // Read string
-        using ValueStringBuilder StringBuilder = new(stackalloc char[64]);
+        ValueStringBuilder StringBuilder = new(stackalloc char[64]);
+        using ValueStringBuilder ReadOnlyStringBuilder = StringBuilder; // Can't pass using variables by-ref
 
         while (true) {
             if (Read() is not char Char) {
@@ -575,81 +576,8 @@ public sealed class JsonhReader : IDisposable {
             }
             // Escape sequence
             else if (Char is '\\') {
-                if (Read() is not char EscapeChar) {
-                    return new Error("Expected escape character after `\\`, got end of input");
-                }
-
-                // Reverse solidus
-                if (EscapeChar is '\\') {
-                    StringBuilder.Append('\\');
-                }
-                // Backspace
-                else if (EscapeChar is 'b') {
-                    StringBuilder.Append('\b');
-                }
-                // Form feed
-                else if (EscapeChar is 'f') {
-                    StringBuilder.Append('\f');
-                }
-                // Newline
-                else if (EscapeChar is 'n') {
-                    StringBuilder.Append('\n');
-                }
-                // Carriage return
-                else if (EscapeChar is 'r') {
-                    StringBuilder.Append('\r');
-                }
-                // Tab
-                else if (EscapeChar is 't') {
-                    StringBuilder.Append('\t');
-                }
-                // Vertical tab
-                else if (EscapeChar is 'v') {
-                    StringBuilder.Append('\v');
-                }
-                // Null
-                else if (EscapeChar is '0') {
-                    StringBuilder.Append('\0');
-                }
-                // Alert
-                else if (EscapeChar is 'a') {
-                    StringBuilder.Append('\a');
-                }
-                // Escape
-                else if (EscapeChar is 'e') {
-                    StringBuilder.Append('\e');
-                }
-                // Unicode hex sequence
-                else if (EscapeChar is 'u') {
-                    if (!ReadHexSequence(4).TryGetValue(out uint Result, out Error Error)) {
-                        return Error;
-                    }
-                    StringBuilder.Append((char)Result);
-                }
-                // Short unicode hex sequence
-                else if (EscapeChar is 'x') {
-                    if (!ReadHexSequence(2).TryGetValue(out uint Result, out Error Error)) {
-                        return Error;
-                    }
-                    StringBuilder.Append((char)Result);
-                }
-                // Long unicode hex sequence
-                else if (EscapeChar is 'U') {
-                    if (!ReadHexSequence(8).TryGetValue(out uint Result, out Error Error)) {
-                        return Error;
-                    }
-                    StringBuilder.Append((Rune)Result);
-                }
-                // Escaped newline
-                else if (NewlineChars.Contains(EscapeChar)) {
-                    // Join CR LF
-                    if (EscapeChar is '\r') {
-                        ReadOne('\n');
-                    }
-                }
-                // Other
-                else {
-                    StringBuilder.Append(EscapeChar);
+                if (ReadEscapeSequence(ref StringBuilder).TryGetError(out Error EscapeSequenceError)) {
+                    return EscapeSequenceError;
                 }
             }
             // Literal character
@@ -773,7 +701,7 @@ public sealed class JsonhReader : IDisposable {
         PartialCharsRead = default;
         return new JsonhToken(this, JsonTokenType.Number, StringBuilder.ToString());
     }
-    private Result ReadNumberNoExponent(ref ValueStringBuilder StringBuilder, ReadOnlySpan<char> BaseDigits) {
+    private Result ReadNumberNoExponent(scoped ref ValueStringBuilder StringBuilder, ReadOnlySpan<char> BaseDigits) {
         // Read sign
         ReadAny('-', '+');
 
@@ -843,8 +771,11 @@ public sealed class JsonhReader : IDisposable {
         }
     }
     private Result<JsonhToken> ReadQuotelessString(ReadOnlySpan<char> InitialChars = default) {
+        bool IsNamedLiteralPossible = true;
+
         // Read quoteless string
-        using ValueStringBuilder StringBuilder = new(stackalloc char[64]);
+        ValueStringBuilder StringBuilder = new(stackalloc char[64]);
+        using ValueStringBuilder ReadOnlyStringBuilder = StringBuilder; // Can't pass using variables by-ref
         StringBuilder.Append(InitialChars);
 
         while (true) {
@@ -853,36 +784,45 @@ public sealed class JsonhReader : IDisposable {
                 break;
             }
 
-            // TODO: Handle escape sequences here.
-
+            // Read escape sequence
+            if (Char is '\\') {
+                Read();
+                if (ReadEscapeSequence(ref StringBuilder).TryGetError(out Error EscapeSequenceError)) {
+                    return EscapeSequenceError;
+                }
+                IsNamedLiteralPossible = false;
+            }
             // End on reserved character
-            if (ReservedChars.Contains(Char)) {
+            else if (ReservedChars.Contains(Char)) {
                 break;
             }
             // End on newline
             else if (NewlineChars.Contains(Char)) {
                 break;
             }
-
             // Append string char
-            Read();
-            StringBuilder.Append(Char);
+            else {
+                Read();
+                StringBuilder.Append(Char);
+            }
 
             // Match named literal
-            if (StringBuilder.Equals("infinity", StringComparison.OrdinalIgnoreCase)) {
-                return new JsonhToken(this, JsonTokenType.Number, StringBuilder.ToString());
-            }
-            else if (StringBuilder.Equals("nan", StringComparison.OrdinalIgnoreCase)) {
-                return new JsonhToken(this, JsonTokenType.Number, StringBuilder.ToString());
-            }
-            else if (StringBuilder.Equals("null", StringComparison.OrdinalIgnoreCase)) {
-                return new JsonhToken(this, JsonTokenType.Null, StringBuilder.ToString());
-            }
-            else if (StringBuilder.Equals("true", StringComparison.OrdinalIgnoreCase)) {
-                return new JsonhToken(this, JsonTokenType.True, StringBuilder.ToString());
-            }
-            else if (StringBuilder.Equals("false", StringComparison.OrdinalIgnoreCase)) {
-                return new JsonhToken(this, JsonTokenType.False, StringBuilder.ToString());
+            if (IsNamedLiteralPossible) {
+                if (StringBuilder.Equals("infinity", StringComparison.OrdinalIgnoreCase)) {
+                    return new JsonhToken(this, JsonTokenType.Number, StringBuilder.ToString());
+                }
+                else if (StringBuilder.Equals("nan", StringComparison.OrdinalIgnoreCase)) {
+                    return new JsonhToken(this, JsonTokenType.Number, StringBuilder.ToString());
+                }
+                else if (StringBuilder.Equals("null", StringComparison.OrdinalIgnoreCase)) {
+                    return new JsonhToken(this, JsonTokenType.Null, StringBuilder.ToString());
+                }
+                else if (StringBuilder.Equals("true", StringComparison.OrdinalIgnoreCase)) {
+                    return new JsonhToken(this, JsonTokenType.True, StringBuilder.ToString());
+                }
+                else if (StringBuilder.Equals("false", StringComparison.OrdinalIgnoreCase)) {
+                    return new JsonhToken(this, JsonTokenType.False, StringBuilder.ToString());
+                }
             }
         }
 
@@ -1041,6 +981,85 @@ public sealed class JsonhReader : IDisposable {
 
         // Found quoteless string if found non-reserved char
         return Peek() is char NextChar && !ReservedChars.Contains(NextChar);
+    }
+    private Result ReadEscapeSequence(scoped ref ValueStringBuilder StringBuilder) {
+        if (Read() is not char EscapeChar) {
+            return new Error("Expected escape sequence, got end of input");
+        }
+
+        // Reverse solidus
+        if (EscapeChar is '\\') {
+            StringBuilder.Append('\\');
+        }
+        // Backspace
+        else if (EscapeChar is 'b') {
+            StringBuilder.Append('\b');
+        }
+        // Form feed
+        else if (EscapeChar is 'f') {
+            StringBuilder.Append('\f');
+        }
+        // Newline
+        else if (EscapeChar is 'n') {
+            StringBuilder.Append('\n');
+        }
+        // Carriage return
+        else if (EscapeChar is 'r') {
+            StringBuilder.Append('\r');
+        }
+        // Tab
+        else if (EscapeChar is 't') {
+            StringBuilder.Append('\t');
+        }
+        // Vertical tab
+        else if (EscapeChar is 'v') {
+            StringBuilder.Append('\v');
+        }
+        // Null
+        else if (EscapeChar is '0') {
+            StringBuilder.Append('\0');
+        }
+        // Alert
+        else if (EscapeChar is 'a') {
+            StringBuilder.Append('\a');
+        }
+        // Escape
+        else if (EscapeChar is 'e') {
+            StringBuilder.Append('\e');
+        }
+        // Unicode hex sequence
+        else if (EscapeChar is 'u') {
+            if (!ReadHexSequence(4).TryGetValue(out uint Result, out Error Error)) {
+                return Error;
+            }
+            StringBuilder.Append((char)Result);
+        }
+        // Short unicode hex sequence
+        else if (EscapeChar is 'x') {
+            if (!ReadHexSequence(2).TryGetValue(out uint Result, out Error Error)) {
+                return Error;
+            }
+            StringBuilder.Append((char)Result);
+        }
+        // Long unicode hex sequence
+        else if (EscapeChar is 'U') {
+            if (!ReadHexSequence(8).TryGetValue(out uint Result, out Error Error)) {
+                return Error;
+            }
+            StringBuilder.Append((Rune)Result);
+        }
+        // Escaped newline
+        else if (NewlineChars.Contains(EscapeChar)) {
+            // Join CR LF
+            if (EscapeChar is '\r') {
+                ReadOne('\n');
+            }
+        }
+        // Other
+        else {
+            StringBuilder.Append(EscapeChar);
+        }
+        return Result.Success;
     }
     private char? Peek() {
         int Char = TextReader.Peek();

@@ -14,6 +14,15 @@ public class ParseTests {
         Assert.Equal("👽 and 👽", Element);
     }
     [Fact]
+    public void QuotelessEscapeSequenceTest() {
+        string Jsonh = """
+            \U0001F47D and \uD83D\uDC7D
+            """;
+        string Element = JsonhReader.ParseElement<string>(Jsonh).Value!;
+
+        Assert.Equal("👽 and 👽", Element);
+    }
+    [Fact]
     public void MultiQuotedStringTest() {
         string Jsonh = """""  
                 """"
