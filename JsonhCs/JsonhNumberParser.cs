@@ -5,7 +5,7 @@ namespace JsonhCs;
 
 public static class JsonhNumberParser {
     /// <summary>
-    /// Converts a JSONH number to a base-10 decimal.
+    /// Converts a JSONH number to a base-10 real.
     /// For example:<br/>
     /// Input: <c>+5.2e3.0</c><br/>
     /// Output: <c>5200</c>
@@ -38,7 +38,7 @@ public static class JsonhNumberParser {
     }
 
     /// <summary>
-    /// Converts a fractional number with an exponent (e.g. <c>12.3e4.5</c>) from the given base (e.g. <c>01234567</c>) to a base-10 decimal.
+    /// Converts a fractional number with an exponent (e.g. <c>12.3e4.5</c>) from the given base (e.g. <c>01234567</c>) to a base-10 real.
     /// </summary>
     private static BigReal ParseFractionalNumberWithExponent(ReadOnlySpan<char> Digits, ReadOnlySpan<char> BaseDigits, int Precision) {
         // Find exponent
@@ -52,7 +52,7 @@ public static class JsonhNumberParser {
         ReadOnlySpan<char> MantissaPart = Digits[..DotIndex];
         ReadOnlySpan<char> ExponentPart = Digits[(DotIndex + 1)..];
 
-        // Decimalize mantissa and exponent
+        // Parse mantissa and exponent
         BigReal Mantissa = ParseFractionalNumber(MantissaPart, BaseDigits);
         BigReal Exponent = ParseFractionalNumber(ExponentPart, BaseDigits);
 
@@ -60,7 +60,7 @@ public static class JsonhNumberParser {
         return Mantissa * BigReal.Pow(10, Exponent, Precision);
     }
     /// <summary>
-    /// Converts a fractional number (e.g. <c>123.45</c>) from the given base (e.g. <c>01234567</c>) to a base-10 decimal.
+    /// Converts a fractional number (e.g. <c>123.45</c>) from the given base (e.g. <c>01234567</c>) to a base-10 real.
     /// </summary>
     private static BigReal ParseFractionalNumber(ReadOnlySpan<char> Digits, ReadOnlySpan<char> BaseDigits) {
         // Optimization for base-10 digits
@@ -79,7 +79,7 @@ public static class JsonhNumberParser {
         ReadOnlySpan<char> WholePart = Digits[..DotIndex];
         ReadOnlySpan<char> FractionPart = Digits[(DotIndex + 1)..];
 
-        // Decimalize parts of number
+        // Parse parts of number
         BigInteger Whole = ParseWholeNumber(WholePart, BaseDigits);
         BigInteger Fraction = ParseWholeNumber(FractionPart, BaseDigits);
 
