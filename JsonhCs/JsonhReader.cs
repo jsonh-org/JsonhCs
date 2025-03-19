@@ -378,16 +378,16 @@ public sealed class JsonhReader : IDisposable {
         // Start of object
         yield return new JsonhToken(this, JsonTokenType.StartObject);
 
-        // Comments & whitespace
-        foreach (Result<JsonhToken> Token in ReadCommentsAndWhitespace()) {
-            if (Token.IsError) {
-                yield return Token.Error;
-                yield break;
-            }
-            yield return Token;
-        }
-
         while (true) {
+            // Comments & whitespace
+            foreach (Result<JsonhToken> Token in ReadCommentsAndWhitespace()) {
+                if (Token.IsError) {
+                    yield return Token.Error;
+                    yield break;
+                }
+                yield return Token;
+            }
+
             if (Peek() is not char Char) {
                 // End of incomplete object
                 if (Options.IncompleteInputs) {
@@ -433,16 +433,16 @@ public sealed class JsonhReader : IDisposable {
             }
         }
 
-        // Comments & whitespace
-        foreach (Result<JsonhToken> Token in ReadCommentsAndWhitespace()) {
-            if (Token.IsError) {
-                yield return Token.Error;
-                yield break;
-            }
-            yield return Token;
-        }
-
         while (true) {
+            // Comments & whitespace
+            foreach (Result<JsonhToken> Token in ReadCommentsAndWhitespace()) {
+                if (Token.IsError) {
+                    yield return Token.Error;
+                    yield break;
+                }
+                yield return Token;
+            }
+
             if (Peek() is not char) {
                 // End of braceless object
                 yield return new JsonhToken(this, JsonTokenType.EndObject);
@@ -505,15 +505,6 @@ public sealed class JsonhReader : IDisposable {
 
         // Optional comma
         ReadOne(',');
-
-        // Comments & whitespace
-        foreach (Result<JsonhToken> Token in ReadCommentsAndWhitespace()) {
-            if (Token.IsError) {
-                yield return Token.Error;
-                yield break;
-            }
-            yield return Token;
-        }
     }
     private IEnumerable<Result<JsonhToken>> ReadArray() {
         // Opening bracket
@@ -524,16 +515,16 @@ public sealed class JsonhReader : IDisposable {
         // Start of array
         yield return new JsonhToken(this, JsonTokenType.StartArray);
 
-        // Comments & whitespace
-        foreach (Result<JsonhToken> Token in ReadCommentsAndWhitespace()) {
-            if (Token.IsError) {
-                yield return Token.Error;
-                yield break;
-            }
-            yield return Token;
-        }
-
         while (true) {
+            // Comments & whitespace
+            foreach (Result<JsonhToken> Token in ReadCommentsAndWhitespace()) {
+                if (Token.IsError) {
+                    yield return Token.Error;
+                    yield break;
+                }
+                yield return Token;
+            }
+
             if (Peek() is not char Char) {
                 // End of incomplete array
                 if (Options.IncompleteInputs) {
@@ -585,15 +576,6 @@ public sealed class JsonhReader : IDisposable {
 
         // Optional comma
         ReadOne(',');
-
-        // Comments & whitespace
-        foreach (Result<JsonhToken> Token in ReadCommentsAndWhitespace()) {
-            if (Token.IsError) {
-                yield return Token.Error;
-                yield break;
-            }
-            yield return Token;
-        }
     }
     private IEnumerable<Result<JsonhToken>> ReadPropertyName(string? String = null) {
         // String
