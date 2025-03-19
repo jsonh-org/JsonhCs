@@ -1,4 +1,6 @@
-﻿namespace JsonhCs.Tests;
+﻿using System.Text.Json;
+
+namespace JsonhCs.Tests;
 
 public class EdgeCaseTests {
     [Fact]
@@ -37,5 +39,16 @@ public class EdgeCaseTests {
             ]
             """;
         JsonhReader.ParseElement<string[]>(Jsonh).Value.ShouldBe(["a b"]);
+    }
+    [Fact]
+    public void SpaceInQuotelessPropertyNameTest() {
+        string Jsonh = """
+            {
+                a b: c d
+            }
+            """;
+        JsonElement Element = JsonhReader.ParseElement(Jsonh).Value;
+        Element.GetPropertyCount().ShouldBe(1);
+        Element.GetProperty("a b").Deserialize<string>(JsonhReader.MiniJson).ShouldBe("c d");
     }
 }
