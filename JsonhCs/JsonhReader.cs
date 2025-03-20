@@ -957,8 +957,8 @@ public sealed partial class JsonhReader : IDisposable {
         using ValueStringBuilder StringBuilder = new(stackalloc char[64]);
 
         while (true) {
-            // Peek char
-            char? Char = Peek();
+            // Read char
+            char? Char = Read();
 
             if (BlockComment) {
                 // Error

@@ -10,9 +10,7 @@ public class EdgeCaseTests {
             """;
         string?[] Element = JsonhReader.ParseElement<string?[]>(Jsonh).Value!;
 
-        Element[0].ShouldBe("nulla");
-        Element[1].ShouldBe("null b");
-        Element[2].ShouldBeNull();
+        Element.ShouldBe(["nulla", "null b", null]);
     }
     [Fact]
     public void BracelessObjectWithInvalidValueTest() {

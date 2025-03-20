@@ -67,4 +67,17 @@ public class ParseTests {
         Element.GetProperty("a").Deserialize<string>(JsonhReader.MiniJson).ShouldBe("b");
         Element.GetProperty("c").Deserialize<string>(JsonhReader.MiniJson).ShouldBe("d");
     }
+    [Fact]
+    public void CommentTest() {
+        string Jsonh = """""  
+            [
+                1 # hash comment
+                2 // line comment
+                3 /* block comment */,4
+            ]
+            """"";
+        JsonElement Element = JsonhReader.ParseElement(Jsonh).Value;
+
+        Element.Deserialize<int[]>(JsonhReader.MiniJson).ShouldBe([1, 2, 3, 4]);
+    }
 }
