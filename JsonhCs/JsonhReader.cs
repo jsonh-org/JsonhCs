@@ -30,7 +30,7 @@ public sealed partial class JsonhReader : IDisposable {
     /// <summary>
     /// Characters that cannot be used in quoteless strings.
     /// </summary>
-    private static readonly SearchValues<char> ReservedChars = SearchValues.Create([',', ':', '[', ']', '{', '}', '/', '#', '\\', '"', '\'']);
+    private static readonly SearchValues<char> ReservedChars = SearchValues.Create(['\\', ',', ':', '[', ']', '{', '}', '/', '#', '"', '\'']);
     /// <summary>
     /// Characters that serve as newlines in strings.
     /// </summary>
@@ -1005,7 +1005,7 @@ public sealed partial class JsonhReader : IDisposable {
         }
 
         // Number
-        else if (Char is (>= '0' and <= '9') or ('-' or '+') or '.') {
+        if (Char is (>= '0' and <= '9') or ('-' or '+') or '.') {
             return ReadNumberOrQuotelessString();
         }
         // String
@@ -1127,7 +1127,7 @@ public sealed partial class JsonhReader : IDisposable {
 
             // Newline
             if (NewlineChars.Contains(Char)) {
-                // Quoteless strings cannot contain newlines
+                // Quoteless strings cannot contain unescaped newlines
                 WhitespaceChars = StringBuilder.AsSpan();
                 return false;
             }
@@ -1145,8 +1145,8 @@ public sealed partial class JsonhReader : IDisposable {
         // End of whitespace
         WhitespaceChars = StringBuilder.AsSpan();
 
-        // Found quoteless string if found non-reserved char
-        return Peek() is char NextChar && !ReservedChars.Contains(NextChar);
+        // Found quoteless string if found backslash or non-reserved char
+        return Peek() is char NextChar && (NextChar is '\\' || !ReservedChars.Contains(NextChar));
     }
     private char? Peek() {
         int Char = TextReader.Peek();
