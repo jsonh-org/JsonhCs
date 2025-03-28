@@ -30,7 +30,7 @@ public sealed partial class JsonhReader : IDisposable {
     /// <summary>
     /// Characters that cannot be used in quoteless strings.
     /// </summary>
-    private static readonly SearchValues<char> ReservedChars = SearchValues.Create([',', ':', '[', ']', '{', '}', '/', '#', '\\']);
+    private static readonly SearchValues<char> ReservedChars = SearchValues.Create([',', ':', '[', ']', '{', '}', '/', '#', '\\', '"', '\'']);
     /// <summary>
     /// Characters that serve as newlines in strings.
     /// </summary>
