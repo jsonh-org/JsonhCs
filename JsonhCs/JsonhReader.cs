@@ -28,6 +28,11 @@ public sealed partial class JsonhReader : IDisposable {
     public long CharCounter { get; set; }
 
     /// <summary>
+    /// A weak reference to this JSONH reader.
+    /// </summary>
+    private readonly WeakReference<JsonhReader> WeakReferenceToSelf;
+
+    /// <summary>
     /// Characters that cannot be used in quoteless strings.
     /// </summary>
     private static readonly SearchValues<char> ReservedChars = SearchValues.Create(['\\', ',', ':', '[', ']', '{', '}', '/', '#', '"', '\'']);
@@ -47,6 +52,7 @@ public sealed partial class JsonhReader : IDisposable {
     public JsonhReader(TextReader TextReader, JsonhReaderOptions? Options = null) {
         this.TextReader = TextReader;
         this.Options = Options ?? new JsonhReaderOptions();
+        this.WeakReferenceToSelf = new WeakReference<JsonhReader>(this);
     }
     /// <summary>
     /// Constructs a reader that reads JSONH from a stream using a given encoding.
@@ -387,7 +393,7 @@ public sealed partial class JsonhReader : IDisposable {
             yield break;
         }
         // Start of object
-        yield return new JsonhToken(this, JsonTokenType.StartObject);
+        yield return new JsonhToken(WeakReferenceToSelf, JsonTokenType.StartObject);
 
         while (true) {
             // Comments & whitespace
@@ -402,7 +408,7 @@ public sealed partial class JsonhReader : IDisposable {
             if (Peek() is not char Char) {
                 // End of incomplete object
                 if (Options.IncompleteInputs) {
-                    yield return new JsonhToken(this, JsonTokenType.EndObject);
+                    yield return new JsonhToken(WeakReferenceToSelf, JsonTokenType.EndObject);
                     yield break;
                 }
                 // Missing closing brace
@@ -414,7 +420,7 @@ public sealed partial class JsonhReader : IDisposable {
             if (Char is '}') {
                 // End of object
                 Read();
-                yield return new JsonhToken(this, JsonTokenType.EndObject);
+                yield return new JsonhToken(WeakReferenceToSelf, JsonTokenType.EndObject);
                 yield break;
             }
             // Property
@@ -431,7 +437,7 @@ public sealed partial class JsonhReader : IDisposable {
     }
     private IEnumerable<Result<JsonhToken>> ReadBracelessObject(IEnumerable<JsonhToken>? PropertyNameTokens = null) {
         // Start of object
-        yield return new JsonhToken(this, JsonTokenType.StartObject);
+        yield return new JsonhToken(WeakReferenceToSelf, JsonTokenType.StartObject);
 
         // Initial tokens
         if (PropertyNameTokens is not null) {
@@ -456,7 +462,7 @@ public sealed partial class JsonhReader : IDisposable {
 
             if (Peek() is not char) {
                 // End of braceless object
-                yield return new JsonhToken(this, JsonTokenType.EndObject);
+                yield return new JsonhToken(WeakReferenceToSelf, JsonTokenType.EndObject);
                 yield break;
             }
 
@@ -524,7 +530,7 @@ public sealed partial class JsonhReader : IDisposable {
             yield break;
         }
         // Start of array
-        yield return new JsonhToken(this, JsonTokenType.StartArray);
+        yield return new JsonhToken(WeakReferenceToSelf, JsonTokenType.StartArray);
 
         while (true) {
             // Comments & whitespace
@@ -539,7 +545,7 @@ public sealed partial class JsonhReader : IDisposable {
             if (Peek() is not char Char) {
                 // End of incomplete array
                 if (Options.IncompleteInputs) {
-                    yield return new JsonhToken(this, JsonTokenType.EndArray);
+                    yield return new JsonhToken(WeakReferenceToSelf, JsonTokenType.EndArray);
                     yield break;
                 }
                 // Missing closing bracket
@@ -551,7 +557,7 @@ public sealed partial class JsonhReader : IDisposable {
             if (Char is ']') {
                 // End of array
                 Read();
-                yield return new JsonhToken(this, JsonTokenType.EndArray);
+                yield return new JsonhToken(WeakReferenceToSelf, JsonTokenType.EndArray);
                 yield break;
             }
             // Item
@@ -614,7 +620,7 @@ public sealed partial class JsonhReader : IDisposable {
         }
 
         // End of property name
-        yield return new JsonhToken(this, JsonTokenType.PropertyName, String);
+        yield return new JsonhToken(WeakReferenceToSelf, JsonTokenType.PropertyName, String);
     }
     private Result<JsonhToken> ReadString() {
         // Start quote
@@ -630,7 +636,7 @@ public sealed partial class JsonhReader : IDisposable {
 
         // Empty string
         if (StartQuoteCounter == 2) {
-            return new JsonhToken(this, JsonTokenType.String, "");
+            return new JsonhToken(WeakReferenceToSelf, JsonTokenType.String, "");
         }
 
         // Count multiple end quotes
@@ -739,7 +745,7 @@ public sealed partial class JsonhReader : IDisposable {
         }
 
         // End of string
-        return new JsonhToken(this, JsonTokenType.String, StringBuilder.ToString());
+        return new JsonhToken(WeakReferenceToSelf, JsonTokenType.String, StringBuilder.ToString());
     }
     private Result<JsonhToken> ReadNumber(out ReadOnlySpan<char> PartialCharsRead) {
         // Read number
@@ -784,7 +790,7 @@ public sealed partial class JsonhReader : IDisposable {
 
         // End of number
         PartialCharsRead = default;
-        return new JsonhToken(this, JsonTokenType.Number, StringBuilder.ToString());
+        return new JsonhToken(WeakReferenceToSelf, JsonTokenType.Number, StringBuilder.ToString());
     }
     private Result ReadNumberNoExponent(scoped ref ValueStringBuilder StringBuilder, ReadOnlySpan<char> BaseDigits) {
         // Read sign
@@ -903,18 +909,18 @@ public sealed partial class JsonhReader : IDisposable {
         // Match named literal
         if (IsNamedLiteralPossible) {
             if (StringBuilder.Equals("null")) {
-                return new JsonhToken(this, JsonTokenType.Null, StringBuilder.ToString());
+                return new JsonhToken(WeakReferenceToSelf, JsonTokenType.Null, StringBuilder.ToString());
             }
             else if (StringBuilder.Equals("true")) {
-                return new JsonhToken(this, JsonTokenType.True, StringBuilder.ToString());
+                return new JsonhToken(WeakReferenceToSelf, JsonTokenType.True, StringBuilder.ToString());
             }
             else if (StringBuilder.Equals("false")) {
-                return new JsonhToken(this, JsonTokenType.False, StringBuilder.ToString());
+                return new JsonhToken(WeakReferenceToSelf, JsonTokenType.False, StringBuilder.ToString());
             }
         }
 
         // End of quoteless string
-        return new JsonhToken(this, JsonTokenType.String, StringBuilder.ToString());
+        return new JsonhToken(WeakReferenceToSelf, JsonTokenType.String, StringBuilder.ToString());
     }
     private IEnumerable<Result<JsonhToken>> ReadCommentsAndWhitespace() {
         while (true) {
@@ -967,13 +973,13 @@ public sealed partial class JsonhReader : IDisposable {
                 }
                 // End of block comment
                 if (Char is '*' && ReadOne('/')) {
-                    return new JsonhToken(this, JsonTokenType.Comment, StringBuilder.ToString());
+                    return new JsonhToken(WeakReferenceToSelf, JsonTokenType.Comment, StringBuilder.ToString());
                 }
             }
             else {
                 // End of line comment
                 if (Char is null || NewlineChars.Contains(Char.Value)) {
-                    return new JsonhToken(this, JsonTokenType.Comment, StringBuilder.ToString());
+                    return new JsonhToken(WeakReferenceToSelf, JsonTokenType.Comment, StringBuilder.ToString());
                 }
             }
 
@@ -1204,13 +1210,13 @@ public record struct JsonhReaderOptions() {
 }
 
 /// <summary>
-/// A single JSONH token with a <see cref="JsonTokenType"/>.
+/// A single JSONH token.
 /// </summary>
-public readonly record struct JsonhToken(JsonhReader Reader, JsonTokenType JsonType, string Value = "") {
+public readonly record struct JsonhToken(WeakReference<JsonhReader> Reader, JsonTokenType JsonType, string Value = "") {
     /// <summary>
     /// The <see cref="JsonhReader"/> that read the token.
     /// </summary>
-    public JsonhReader Reader { get; } = Reader;
+    public WeakReference<JsonhReader> Reader { get; } = Reader;
     /// <summary>
     /// The type of the token.
     /// </summary>
