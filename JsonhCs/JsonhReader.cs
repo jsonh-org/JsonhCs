@@ -1163,8 +1163,8 @@ public sealed partial class JsonhReader : IDisposable {
         CharCounter++;
         return (char)Char;
     }
-    private bool ReadOne(char Char) {
-        if (Peek() == Char) {
+    private bool ReadOne(char Option) {
+        if (Peek() == Option) {
             Read();
             return true;
         }
