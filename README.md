@@ -50,5 +50,5 @@ string Jsonh = """
         this is: awesome
     }
     """;
-string Element = JsonhReader.ParseElement<string>(Jsonh).Value!;
+string Element = JsonhCs.JsonhReader.ParseElement<string>(Jsonh).Value!;
 ```
