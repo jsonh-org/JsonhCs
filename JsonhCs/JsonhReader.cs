@@ -306,13 +306,13 @@ public sealed partial class JsonhReader : IDisposable {
         }
 
         // Peek char
-        if (Peek() is not char Char) {
+        if (Peek() is not char Next) {
             yield return new Error("Expected token, got end of input");
             yield break;
         }
 
         // Object
-        if (Char is '{') {
+        if (Next is '{') {
             foreach (Result<JsonhToken> Token in ReadObject()) {
                 if (Token.IsError) {
                     yield return Token.Error;
@@ -322,7 +322,7 @@ public sealed partial class JsonhReader : IDisposable {
             }
         }
         // Array
-        else if (Char is '[') {
+        else if (Next is '[') {
             foreach (Result<JsonhToken> Token in ReadArray()) {
                 if (Token.IsError) {
                     yield return Token.Error;
@@ -399,7 +399,7 @@ public sealed partial class JsonhReader : IDisposable {
                 yield return Token;
             }
 
-            if (Peek() is not char Char) {
+            if (Peek() is not char Next) {
                 // End of incomplete object
                 if (Options.IncompleteInputs) {
                     yield return new JsonhToken(JsonTokenType.EndObject);
@@ -411,7 +411,7 @@ public sealed partial class JsonhReader : IDisposable {
             }
 
             // Closing brace
-            if (Char is '}') {
+            if (Next is '}') {
                 // End of object
                 Read();
                 yield return new JsonhToken(JsonTokenType.EndObject);
@@ -536,7 +536,7 @@ public sealed partial class JsonhReader : IDisposable {
                 yield return Token;
             }
 
-            if (Peek() is not char Char) {
+            if (Peek() is not char Next) {
                 // End of incomplete array
                 if (Options.IncompleteInputs) {
                     yield return new JsonhToken(JsonTokenType.EndArray);
@@ -548,7 +548,7 @@ public sealed partial class JsonhReader : IDisposable {
             }
 
             // Closing bracket
-            if (Char is ']') {
+            if (Next is ']') {
                 // End of array
                 Read();
                 yield return new JsonhToken(JsonTokenType.EndArray);
@@ -641,33 +641,33 @@ public sealed partial class JsonhReader : IDisposable {
         using ValueStringBuilder ReadOnlyStringBuilder = StringBuilder; // Can't pass using variables by-ref
 
         while (true) {
-            if (Read() is not char Char) {
+            if (Read() is not char Next) {
                 return new Error("Expected end of string, got end of input");
             }
 
             // Partial end quote was actually part of string
-            if (Char != StartQuote) {
+            if (Next != StartQuote) {
                 for (; EndQuoteCounter > 0; EndQuoteCounter--) {
                     StringBuilder.Append(StartQuote);
                 }
             }
 
             // End quote
-            if (Char == StartQuote) {
+            if (Next == StartQuote) {
                 EndQuoteCounter++;
                 if (EndQuoteCounter == StartQuoteCounter) {
                     break;
                 }
             }
             // Escape sequence
-            else if (Char is '\\') {
+            else if (Next is '\\') {
                 if (ReadEscapeSequence(ref StringBuilder).TryGetError(out Error EscapeSequenceError)) {
                     return EscapeSequenceError;
                 }
             }
             // Literal character
             else {
-                StringBuilder.Append(Char);
+                StringBuilder.Append(Next);
             }
         }
 
@@ -684,10 +684,10 @@ public sealed partial class JsonhReader : IDisposable {
                     bool IsLeadingWhitespace = true;
 
                     for (int Index = 0; Index < StringBuilder.Length; Index++) {
-                        char Char = StringBuilder[Index];
+                        char Next = StringBuilder[Index];
 
                         // Newline
-                        if (NewlineChars.Contains(Char)) {
+                        if (NewlineChars.Contains(Next)) {
                             // Reset leading whitespace counter
                             CurrentLeadingWhitespace = 0;
                             // Enter leading whitespace
@@ -696,7 +696,7 @@ public sealed partial class JsonhReader : IDisposable {
                         // Leading whitespace
                         else if (IsLeadingWhitespace && CurrentLeadingWhitespace <= LeadingWhitespaceCount) {
                             // Whitespace
-                            if (char.IsWhiteSpace(Char)) {
+                            if (char.IsWhiteSpace(Next)) {
                                 // Increment leading whitespace counter
                                 CurrentLeadingWhitespace++;
                                 // Maximum leading whitespace reached
@@ -799,19 +799,19 @@ public sealed partial class JsonhReader : IDisposable {
 
         while (true) {
             // Peek char
-            if (Peek() is not char Char) {
+            if (Peek() is not char Next) {
                 break;
             }
 
             // Digit
-            if (BaseDigits.Contains(Char)) {
+            if (BaseDigits.Contains(Next)) {
                 Read();
-                StringBuilder.Append(Char);
+                StringBuilder.Append(Next);
             }
             // Decimal point
-            else if (Char is '.') {
+            else if (Next is '.') {
                 Read();
-                StringBuilder.Append(Char);
+                StringBuilder.Append(Next);
 
                 // Duplicate decimal point
                 if (IsFraction) {
@@ -820,9 +820,9 @@ public sealed partial class JsonhReader : IDisposable {
                 IsFraction = true;
             }
             // Underscore
-            else if (Char is '_') {
+            else if (Next is '_') {
                 Read();
-                StringBuilder.Append(Char);
+                StringBuilder.Append(Next);
             }
             // Other
             else {
@@ -865,12 +865,12 @@ public sealed partial class JsonhReader : IDisposable {
 
         while (true) {
             // Read char
-            if (Peek() is not char Char) {
+            if (Peek() is not char Next) {
                 break;
             }
 
             // Read escape sequence
-            if (Char is '\\') {
+            if (Next is '\\') {
                 Read();
                 if (ReadEscapeSequence(ref StringBuilder).TryGetError(out Error EscapeSequenceError)) {
                     return EscapeSequenceError;
@@ -878,17 +878,17 @@ public sealed partial class JsonhReader : IDisposable {
                 IsNamedLiteralPossible = false;
             }
             // End on reserved character
-            else if (ReservedChars.Contains(Char)) {
+            else if (ReservedChars.Contains(Next)) {
                 break;
             }
             // End on newline
-            else if (NewlineChars.Contains(Char)) {
+            else if (NewlineChars.Contains(Next)) {
                 break;
             }
             // Append string char
             else {
                 Read();
-                StringBuilder.Append(Char);
+                StringBuilder.Append(Next);
             }
         }
 
@@ -958,38 +958,38 @@ public sealed partial class JsonhReader : IDisposable {
 
         while (true) {
             // Read char
-            char? Char = Read();
+            char? Next = Read();
 
             if (BlockComment) {
                 // Error
-                if (Char is null) {
+                if (Next is null) {
                     return new Error("Expected end of block comment, got end of input");
                 }
                 // End of block comment
-                if (Char is '*' && ReadOne('/')) {
+                if (Next is '*' && ReadOne('/')) {
                     return new JsonhToken(JsonTokenType.Comment, StringBuilder.ToString());
                 }
             }
             else {
                 // End of line comment
-                if (Char is null || NewlineChars.Contains(Char.Value)) {
+                if (Next is null || NewlineChars.Contains(Next.Value)) {
                     return new JsonhToken(JsonTokenType.Comment, StringBuilder.ToString());
                 }
             }
 
             // Comment char
-            StringBuilder.Append(Char.Value);
+            StringBuilder.Append(Next.Value);
         }
     }
     private void ReadWhitespace() {
         while (true) {
             // Peek char
-            if (Peek() is not char Char) {
+            if (Peek() is not char Next) {
                 return;
             }
 
             // Whitespace
-            if (char.IsWhiteSpace(Char)) {
+            if (char.IsWhiteSpace(Next)) {
                 Read();
             }
             // End of whitespace
@@ -1000,16 +1000,16 @@ public sealed partial class JsonhReader : IDisposable {
     }
     private Result<JsonhToken> ReadPrimitiveElement() {
         // Peek char
-        if (Peek() is not char Char) {
+        if (Peek() is not char Next) {
             return new Error();
         }
 
         // Number
-        if (Char is (>= '0' and <= '9') or ('-' or '+') or '.') {
+        if (Next is (>= '0' and <= '9') or ('-' or '+') or '.') {
             return ReadNumberOrQuotelessString();
         }
         // String
-        else if (Char is '"' or '\'') {
+        else if (Next is '"' or '\'') {
             return ReadString();
         }
         // Quoteless string (or named literal)
@@ -1021,11 +1021,11 @@ public sealed partial class JsonhReader : IDisposable {
         Span<char> HexChars = stackalloc char[Length];
 
         for (int Index = 0; Index < Length; Index++) {
-            char? Char = Read();
+            char? Next = Read();
 
             // Hex digit
-            if (Char is (>= '0' and <= '9') or (>= 'A' and <= 'F') or (>= 'a' and <= 'f')) {
-                HexChars[Index] = Char.Value;
+            if (Next is (>= '0' and <= '9') or (>= 'A' and <= 'F') or (>= 'a' and <= 'f')) {
+                HexChars[Index] = Next.Value;
             }
             // Unexpected char
             else {
@@ -1121,24 +1121,24 @@ public sealed partial class JsonhReader : IDisposable {
 
         while (true) {
             // Read char
-            if (Peek() is not char Char) {
+            if (Peek() is not char Next) {
                 break;
             }
 
             // Newline
-            if (NewlineChars.Contains(Char)) {
+            if (NewlineChars.Contains(Next)) {
                 // Quoteless strings cannot contain unescaped newlines
                 WhitespaceChars = StringBuilder.AsSpan();
                 return false;
             }
 
             // End of whitespace
-            if (!char.IsWhiteSpace(Char)) {
+            if (!char.IsWhiteSpace(Next)) {
                 break;
             }
 
             // Whitespace
-            StringBuilder.Append(Char);
+            StringBuilder.Append(Next);
             Read();
         }
 
@@ -1172,16 +1172,16 @@ public sealed partial class JsonhReader : IDisposable {
     }
     private char? ReadAny(params ReadOnlySpan<char> Options) {
         // Peek char
-        if (Peek() is not char Char) {
+        if (Peek() is not char Next) {
             return null;
         }
         // Match option
-        if (!Options.Contains(Char)) {
+        if (!Options.Contains(Next)) {
             return null;
         }
         // Option matched
         Read();
-        return Char;
+        return Next;
     }
 }
 
