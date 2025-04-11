@@ -170,79 +170,90 @@ public sealed partial class JsonhReader : IDisposable {
                 return Error;
             }
 
-            // Null
-            if (Token.JsonType is JsonTokenType.Null) {
-                JsonValue? Node = null;
-                if (SubmitNode(Node)) {
-                    return Node;
-                }
-            }
-            // True
-            else if (Token.JsonType is JsonTokenType.True) {
-                JsonValue Node = JsonValue.Create(true);
-                if (SubmitNode(Node)) {
-                    return Node;
-                }
-            }
-            // False
-            else if (Token.JsonType is JsonTokenType.False) {
-                JsonValue Node = JsonValue.Create(false);
-                if (SubmitNode(Node)) {
-                    return Node;
-                }
-            }
-            // String
-            else if (Token.JsonType is JsonTokenType.String) {
-                JsonValue Node = JsonValue.Create(Token.Value);
-                if (SubmitNode(Node)) {
-                    return Node;
-                }
-            }
-            // Number
-            else if (Token.JsonType is JsonTokenType.Number) {
-                try {
-                    BigReal Result = JsonhNumberParser.Parse(Token.Value);
-                    JsonNode Node = JsonNode.Parse(Result.ToString())!;
+            switch (Token.JsonType) {
+                // Null
+                case JsonTokenType.Null: {
+                    JsonValue? Node = null;
                     if (SubmitNode(Node)) {
                         return Node;
                     }
+                    break;
                 }
-                catch (Exception Ex) {
-                    return Ex;
+                // True
+                case JsonTokenType.True: {
+                    JsonValue Node = JsonValue.Create(true);
+                    if (SubmitNode(Node)) {
+                        return Node;
+                    }
+                    break;
                 }
-            }
-            // Start Object
-            else if (Token.JsonType is JsonTokenType.StartObject) {
-                JsonObject Node = [];
-                StartNode(Node);
-            }
-            // Start Array
-            else if (Token.JsonType is JsonTokenType.StartArray) {
-                JsonArray Node = [];
-                StartNode(Node);
-            }
-            // End Object/Array
-            else if (Token.JsonType is JsonTokenType.EndObject or JsonTokenType.EndArray) {
-                // Nested node
-                if (CurrentNode?.Parent is not null) {
-                    CurrentNode = CurrentNode.Parent;
+                // False
+                case JsonTokenType.False: {
+                    JsonValue Node = JsonValue.Create(false);
+                    if (SubmitNode(Node)) {
+                        return Node;
+                    }
+                    break;
                 }
-                // Root node
-                else {
-                    return CurrentNode;
+                // String
+                case JsonTokenType.String: {
+                    JsonValue Node = JsonValue.Create(Token.Value);
+                    if (SubmitNode(Node)) {
+                        return Node;
+                    }
+                    break;
                 }
-            }
-            // Property Name
-            else if (Token.JsonType is JsonTokenType.PropertyName) {
-                CurrentPropertyName = Token.Value;
-            }
-            // Comment
-            else if (Token.JsonType is JsonTokenType.Comment) {
-                // Pass
-            }
-            // Not implemented
-            else {
-                throw new NotImplementedException(Token.JsonType.ToString());
+                // Number
+                case JsonTokenType.Number: {
+                    try {
+                        BigReal Result = JsonhNumberParser.Parse(Token.Value);
+                        JsonNode Node = JsonNode.Parse(Result.ToString())!;
+                        if (SubmitNode(Node)) {
+                            return Node;
+                        }
+                        break;
+                    }
+                    catch (Exception Ex) {
+                        return Ex;
+                    }
+                }
+                // Start Object
+                case JsonTokenType.StartObject: {
+                    JsonObject Node = [];
+                    StartNode(Node);
+                    break;
+                }
+                // Start Array
+                case JsonTokenType.StartArray: {
+                    JsonArray Node = [];
+                    StartNode(Node);
+                    break;
+                }
+                // End Object/Array
+                case JsonTokenType.EndObject or JsonTokenType.EndArray: {
+                    // Nested node
+                    if (CurrentNode?.Parent is not null) {
+                        CurrentNode = CurrentNode.Parent;
+                    }
+                    // Root node
+                    else {
+                        return CurrentNode;
+                    }
+                    break;
+                }
+                // Property Name
+                case JsonTokenType.PropertyName: {
+                    CurrentPropertyName = Token.Value;
+                    break;
+                }
+                // Comment
+                case JsonTokenType.Comment: {
+                    break;
+                }
+                // Not implemented
+                default: {
+                    throw new NotImplementedException(Token.JsonType.ToString());
+                }
             }
         }
 
@@ -272,19 +283,24 @@ public sealed partial class JsonhReader : IDisposable {
                 return false;
             }
 
-            // Start structure
-            if (Token.JsonType is JsonTokenType.StartObject or JsonTokenType.StartArray) {
-                CurrentDepth++;
-            }
-            // End structure
-            else if (Token.JsonType is JsonTokenType.EndObject or JsonTokenType.EndArray) {
-                CurrentDepth--;
-            }
-            // Property name
-            else if (Token.JsonType is JsonTokenType.PropertyName) {
-                if (CurrentDepth == 1 && Token.Value == PropertyName) {
-                    // Path found
-                    return true;
+            switch (Token.JsonType) {
+                // Start structure
+                case JsonTokenType.StartObject or JsonTokenType.StartArray: {
+                    CurrentDepth++;
+                    break;
+                }
+                // End structure
+                case JsonTokenType.EndObject or JsonTokenType.EndArray: {
+                    CurrentDepth--;
+                    break;
+                }
+                // Property name
+                case JsonTokenType.PropertyName: {
+                    if (CurrentDepth == 1 && Token.Value == PropertyName) {
+                        // Path found
+                        return true;
+                    }
+                    break;
                 }
             }
         }
