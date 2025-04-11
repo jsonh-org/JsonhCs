@@ -53,7 +53,7 @@ public class ParseTests {
     }
     [Fact]
     public void NumberParserTest() {
-        BigReal.Truncate(JsonhNumberParser.Parse("1.2e3.4")).ShouldBe(3014);
+        BigReal.Truncate(JsonhNumberParser.Parse("1.2e3.4").Value).ShouldBe(3014);
     }
     [Fact]
     public void BracelessObjectTest() {

@@ -205,17 +205,14 @@ public sealed partial class JsonhReader : IDisposable {
                 }
                 // Number
                 case JsonTokenType.Number: {
-                    try {
-                        BigReal Result = JsonhNumberParser.Parse(Token.Value);
-                        JsonNode Node = JsonNode.Parse(Result.ToString())!;
-                        if (SubmitNode(Node)) {
-                            return Node;
-                        }
-                        break;
+                    if (JsonhNumberParser.Parse(Token.Value).TryGetError(out Error NumberError, out BigReal Number)) {
+                        return NumberError;
                     }
-                    catch (Exception Ex) {
-                        return Ex;
+                    JsonNode Node = JsonNode.Parse(Number.ToString())!;
+                    if (SubmitNode(Node)) {
+                        return Node;
                     }
+                    break;
                 }
                 // Start Object
                 case JsonTokenType.StartObject: {
