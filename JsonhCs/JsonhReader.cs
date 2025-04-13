@@ -754,6 +754,67 @@ public sealed partial class JsonhReader : IDisposable {
         // End of string
         return new JsonhToken(JsonTokenType.String, StringBuilder.ToString());
     }
+    private Result<JsonhToken> ReadQuotelessString(ReadOnlySpan<char> InitialChars = default) {
+        bool IsNamedLiteralPossible = true;
+
+        // Read quoteless string
+        ValueStringBuilder StringBuilder = new(stackalloc char[64]);
+        using ValueStringBuilder ReadOnlyStringBuilder = StringBuilder; // Can't pass using variables by-ref
+        StringBuilder.Append(InitialChars);
+
+        while (true) {
+            // Read char
+            if (Peek() is not char Next) {
+                break;
+            }
+
+            // Read escape sequence
+            if (Next is '\\') {
+                Read();
+                if (ReadEscapeSequence(ref StringBuilder).TryGetError(out Error EscapeSequenceError)) {
+                    return EscapeSequenceError;
+                }
+                IsNamedLiteralPossible = false;
+            }
+            // End on reserved character
+            else if (ReservedChars.Contains(Next)) {
+                break;
+            }
+            // End on newline
+            else if (NewlineChars.Contains(Next)) {
+                break;
+            }
+            // Append string char
+            else {
+                Read();
+                StringBuilder.Append(Next);
+            }
+        }
+
+        // Ensure not empty
+        if (StringBuilder.AsSpan().IsEmpty) {
+            return new Error("Empty quoteless string");
+        }
+
+        // Trim trailing whitespace
+        StringBuilder.TrimEnd();
+
+        // Match named literal
+        if (IsNamedLiteralPossible) {
+            if (StringBuilder.Equals("null")) {
+                return new JsonhToken(JsonTokenType.Null, StringBuilder.ToString());
+            }
+            else if (StringBuilder.Equals("true")) {
+                return new JsonhToken(JsonTokenType.True, StringBuilder.ToString());
+            }
+            else if (StringBuilder.Equals("false")) {
+                return new JsonhToken(JsonTokenType.False, StringBuilder.ToString());
+            }
+        }
+
+        // End of quoteless string
+        return new JsonhToken(JsonTokenType.String, StringBuilder.ToString());
+    }
     private Result<JsonhToken> ReadNumber(out ReadOnlySpan<char> PartialCharsRead) {
         // Read number
         ValueStringBuilder StringBuilder = new(stackalloc char[64]);
@@ -867,67 +928,6 @@ public sealed partial class JsonhReader : IDisposable {
         else {
             return ReadQuotelessString(PartialCharsRead);
         }
-    }
-    private Result<JsonhToken> ReadQuotelessString(ReadOnlySpan<char> InitialChars = default) {
-        bool IsNamedLiteralPossible = true;
-
-        // Read quoteless string
-        ValueStringBuilder StringBuilder = new(stackalloc char[64]);
-        using ValueStringBuilder ReadOnlyStringBuilder = StringBuilder; // Can't pass using variables by-ref
-        StringBuilder.Append(InitialChars);
-
-        while (true) {
-            // Read char
-            if (Peek() is not char Next) {
-                break;
-            }
-
-            // Read escape sequence
-            if (Next is '\\') {
-                Read();
-                if (ReadEscapeSequence(ref StringBuilder).TryGetError(out Error EscapeSequenceError)) {
-                    return EscapeSequenceError;
-                }
-                IsNamedLiteralPossible = false;
-            }
-            // End on reserved character
-            else if (ReservedChars.Contains(Next)) {
-                break;
-            }
-            // End on newline
-            else if (NewlineChars.Contains(Next)) {
-                break;
-            }
-            // Append string char
-            else {
-                Read();
-                StringBuilder.Append(Next);
-            }
-        }
-
-        // Ensure not empty
-        if (StringBuilder.AsSpan().IsEmpty) {
-            return new Error("Empty quoteless string");
-        }
-
-        // Trim trailing whitespace
-        StringBuilder.TrimEnd();
-
-        // Match named literal
-        if (IsNamedLiteralPossible) {
-            if (StringBuilder.Equals("null")) {
-                return new JsonhToken(JsonTokenType.Null, StringBuilder.ToString());
-            }
-            else if (StringBuilder.Equals("true")) {
-                return new JsonhToken(JsonTokenType.True, StringBuilder.ToString());
-            }
-            else if (StringBuilder.Equals("false")) {
-                return new JsonhToken(JsonTokenType.False, StringBuilder.ToString());
-            }
-        }
-
-        // End of quoteless string
-        return new JsonhToken(JsonTokenType.String, StringBuilder.ToString());
     }
     private IEnumerable<Result<JsonhToken>> ReadCommentsAndWhitespace() {
         while (true) {
