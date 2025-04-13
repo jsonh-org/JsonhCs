@@ -530,6 +530,34 @@ public sealed partial class JsonhReader : IDisposable {
         // Optional comma
         ReadOne(',');
     }
+    private IEnumerable<Result<JsonhToken>> ReadPropertyName(string? String = null) {
+        // String
+        if (String is null) {
+            if (ReadString().TryGetError(out Error StringError, out JsonhToken StringToken)) {
+                yield return StringError;
+                yield break;
+            }
+            String = StringToken.Value;
+        }
+
+        // Comments & whitespace
+        foreach (Result<JsonhToken> Token in ReadCommentsAndWhitespace()) {
+            if (Token.IsError) {
+                yield return Token.Error;
+                yield break;
+            }
+            yield return Token;
+        }
+
+        // Colon
+        if (!ReadOne(':')) {
+            yield return new Error("Expected `:` after property name in object");
+            yield break;
+        }
+
+        // End of property name
+        yield return new JsonhToken(JsonTokenType.PropertyName, String);
+    }
     private IEnumerable<Result<JsonhToken>> ReadArray() {
         // Opening bracket
         if (!ReadOne('[')) {
@@ -600,34 +628,6 @@ public sealed partial class JsonhReader : IDisposable {
 
         // Optional comma
         ReadOne(',');
-    }
-    private IEnumerable<Result<JsonhToken>> ReadPropertyName(string? String = null) {
-        // String
-        if (String is null) {
-            if (ReadString().TryGetError(out Error StringError, out JsonhToken StringToken)) {
-                yield return StringError;
-                yield break;
-            }
-            String = StringToken.Value;
-        }
-
-        // Comments & whitespace
-        foreach (Result<JsonhToken> Token in ReadCommentsAndWhitespace()) {
-            if (Token.IsError) {
-                yield return Token.Error;
-                yield break;
-            }
-            yield return Token;
-        }
-
-        // Colon
-        if (!ReadOne(':')) {
-            yield return new Error("Expected `:` after property name in object");
-            yield break;
-        }
-
-        // End of property name
-        yield return new JsonhToken(JsonTokenType.PropertyName, String);
     }
     private Result<JsonhToken> ReadString() {
         // Start quote
