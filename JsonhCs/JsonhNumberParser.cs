@@ -7,6 +7,9 @@ namespace JsonhCs;
 /// <summary>
 /// Methods for parsing JSONH numbers.
 /// </summary>
+/// <remarks>
+/// Unlike <see cref="JsonhReader.ReadElement()"/>, minimal validation is done here.
+/// </remarks>
 public static class JsonhNumberParser {
     /// <summary>
     /// Converts a JSONH number to a base-10 real.
@@ -73,7 +76,12 @@ public static class JsonhNumberParser {
     private static Result<BigReal> ParseFractionalNumber(ReadOnlySpan<char> Digits, ReadOnlySpan<char> BaseDigits) {
         // Optimization for base-10 digits
         if (BaseDigits is "0123456789") {
-            return BigReal.Parse(Digits);
+            try {
+                return BigReal.Parse(Digits);
+            }
+            catch (Exception Ex) {
+                return Ex;
+            }
         }
 
         // Find dot
@@ -104,7 +112,12 @@ public static class JsonhNumberParser {
     private static Result<BigInteger> ParseWholeNumber(ReadOnlySpan<char> Digits, ReadOnlySpan<char> BaseDigits) {
         // Optimization for base-10 digits
         if (BaseDigits is "0123456789") {
-            return BigInteger.Parse(Digits);
+            try {
+                return BigInteger.Parse(Digits);
+            }
+            catch (Exception Ex) {
+                return Ex;
+            }
         }
 
         // Get sign
@@ -127,7 +140,7 @@ public static class JsonhNumberParser {
 
             // Ensure digit is valid
             if (DigitInt < 0) {
-                throw new ArgumentException($"Invalid digit: '{DigitChar}'", nameof(Digits));
+                return new Error($"Invalid digit: '{DigitChar}'");
             }
 
             // Get magnitude of current digit column
