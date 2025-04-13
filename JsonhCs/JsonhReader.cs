@@ -561,7 +561,7 @@ public sealed partial class JsonhReader : IDisposable {
     private IEnumerable<Result<JsonhToken>> ReadArray() {
         // Opening bracket
         if (!ReadOne('[')) {
-            yield return new Error("Expected '[' to start array");
+            yield return new Error("Expected `[` to start array");
             yield break;
         }
         // Start of array
@@ -959,7 +959,7 @@ public sealed partial class JsonhReader : IDisposable {
                 BlockComment = true;
             }
             else {
-                return new Error("Unexpected '/'");
+                return new Error("Unexpected `/`");
             }
         }
         else {
