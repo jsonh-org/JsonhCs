@@ -802,13 +802,13 @@ public sealed partial class JsonhReader : IDisposable {
         // Match named literal
         if (IsNamedLiteralPossible) {
             if (StringBuilder.Equals("null")) {
-                return new JsonhToken(JsonTokenType.Null, StringBuilder.ToString());
+                return new JsonhToken(JsonTokenType.Null);
             }
             else if (StringBuilder.Equals("true")) {
-                return new JsonhToken(JsonTokenType.True, StringBuilder.ToString());
+                return new JsonhToken(JsonTokenType.True);
             }
             else if (StringBuilder.Equals("false")) {
-                return new JsonhToken(JsonTokenType.False, StringBuilder.ToString());
+                return new JsonhToken(JsonTokenType.False);
             }
         }
 
