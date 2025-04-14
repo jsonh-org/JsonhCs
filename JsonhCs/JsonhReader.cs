@@ -815,6 +815,39 @@ public sealed partial class JsonhReader : IDisposable {
         // End of quoteless string
         return new JsonhToken(JsonTokenType.String, StringBuilder.ToString());
     }
+    private bool DetectQuotelessString(out ReadOnlySpan<char> WhitespaceChars) {
+        // Read whitespace
+        using ValueStringBuilder StringBuilder = new();
+
+        while (true) {
+            // Read char
+            if (Peek() is not char Next) {
+                break;
+            }
+
+            // Newline
+            if (NewlineChars.Contains(Next)) {
+                // Quoteless strings cannot contain unescaped newlines
+                WhitespaceChars = StringBuilder.AsSpan();
+                return false;
+            }
+
+            // End of whitespace
+            if (!char.IsWhiteSpace(Next)) {
+                break;
+            }
+
+            // Whitespace
+            StringBuilder.Append(Next);
+            Read();
+        }
+
+        // End of whitespace
+        WhitespaceChars = StringBuilder.AsSpan();
+
+        // Found quoteless string if found backslash or non-reserved char
+        return Peek() is char NextChar && (NextChar is '\\' || !ReservedChars.Contains(NextChar));
+    }
     private Result<JsonhToken> ReadNumber(out ReadOnlySpan<char> PartialCharsRead) {
         // Read number
         ValueStringBuilder StringBuilder = new(stackalloc char[64]);
@@ -1132,39 +1165,6 @@ public sealed partial class JsonhReader : IDisposable {
             StringBuilder.Append(EscapeChar);
         }
         return Result.Success;
-    }
-    private bool DetectQuotelessString(out ReadOnlySpan<char> WhitespaceChars) {
-        // Read whitespace
-        using ValueStringBuilder StringBuilder = new();
-
-        while (true) {
-            // Read char
-            if (Peek() is not char Next) {
-                break;
-            }
-
-            // Newline
-            if (NewlineChars.Contains(Next)) {
-                // Quoteless strings cannot contain unescaped newlines
-                WhitespaceChars = StringBuilder.AsSpan();
-                return false;
-            }
-
-            // End of whitespace
-            if (!char.IsWhiteSpace(Next)) {
-                break;
-            }
-
-            // Whitespace
-            StringBuilder.Append(Next);
-            Read();
-        }
-
-        // End of whitespace
-        WhitespaceChars = StringBuilder.AsSpan();
-
-        // Found quoteless string if found backslash or non-reserved char
-        return Peek() is char NextChar && (NextChar is '\\' || !ReservedChars.Contains(NextChar));
     }
     private char? Peek() {
         int Char = TextReader.Peek();
