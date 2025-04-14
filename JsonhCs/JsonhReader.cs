@@ -937,7 +937,7 @@ public sealed partial class JsonhReader : IDisposable {
     private Result<JsonhToken> ReadPrimitiveElement() {
         // Peek char
         if (Peek() is not char Next) {
-            return new Error();
+            return new Error("Expected primitive element, got end of input");
         }
 
         // Number
