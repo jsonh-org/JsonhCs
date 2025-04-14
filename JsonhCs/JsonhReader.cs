@@ -929,6 +929,25 @@ public sealed partial class JsonhReader : IDisposable {
             return ReadQuotelessString(PartialCharsRead);
         }
     }
+    private Result<JsonhToken> ReadPrimitiveElement() {
+        // Peek char
+        if (Peek() is not char Next) {
+            return new Error();
+        }
+
+        // Number
+        if (Next is (>= '0' and <= '9') or ('-' or '+') or '.') {
+            return ReadNumberOrQuotelessString();
+        }
+        // String
+        else if (Next is '"' or '\'') {
+            return ReadString();
+        }
+        // Quoteless string (or named literal)
+        else {
+            return ReadQuotelessString();
+        }
+    }
     private IEnumerable<Result<JsonhToken>> ReadCommentsAndWhitespace() {
         while (true) {
             // Whitespace
@@ -1009,25 +1028,6 @@ public sealed partial class JsonhReader : IDisposable {
             else {
                 return;
             }
-        }
-    }
-    private Result<JsonhToken> ReadPrimitiveElement() {
-        // Peek char
-        if (Peek() is not char Next) {
-            return new Error();
-        }
-
-        // Number
-        if (Next is (>= '0' and <= '9') or ('-' or '+') or '.') {
-            return ReadNumberOrQuotelessString();
-        }
-        // String
-        else if (Next is '"' or '\'') {
-            return ReadString();
-        }
-        // Quoteless string (or named literal)
-        else {
-            return ReadQuotelessString();
         }
     }
     private Result<uint> ReadHexSequence(int Length) {
