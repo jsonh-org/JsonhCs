@@ -817,7 +817,7 @@ public sealed partial class JsonhReader : IDisposable {
     }
     private bool DetectQuotelessString(out ReadOnlySpan<char> WhitespaceChars) {
         // Read whitespace
-        using ValueStringBuilder StringBuilder = new();
+        using ValueStringBuilder WhitespaceBuilder = new();
 
         while (true) {
             // Read char
@@ -828,7 +828,7 @@ public sealed partial class JsonhReader : IDisposable {
             // Newline
             if (NewlineChars.Contains(Next)) {
                 // Quoteless strings cannot contain unescaped newlines
-                WhitespaceChars = StringBuilder.AsSpan();
+                WhitespaceChars = WhitespaceBuilder.AsSpan();
                 return false;
             }
 
@@ -838,62 +838,62 @@ public sealed partial class JsonhReader : IDisposable {
             }
 
             // Whitespace
-            StringBuilder.Append(Next);
+            WhitespaceBuilder.Append(Next);
             Read();
         }
 
         // End of whitespace
-        WhitespaceChars = StringBuilder.AsSpan();
+        WhitespaceChars = WhitespaceBuilder.AsSpan();
 
         // Found quoteless string if found backslash or non-reserved char
         return Peek() is char NextChar && (NextChar is '\\' || !ReservedChars.Contains(NextChar));
     }
     private Result<JsonhToken> ReadNumber(out ReadOnlySpan<char> PartialCharsRead) {
         // Read number
-        ValueStringBuilder StringBuilder = new(stackalloc char[64]);
-        using ValueStringBuilder ReadOnlyStringBuilder = StringBuilder; // Can't pass using variables by-ref
+        ValueStringBuilder NumberBuilder = new(stackalloc char[64]);
+        using ValueStringBuilder ReadOnlyNumberBuilder = NumberBuilder; // Can't pass using variables by-ref
 
         // Read base
         string BaseDigits = "0123456789";
         if (ReadOne('0')) {
-            StringBuilder.Append('0');
+            NumberBuilder.Append('0');
 
             if (ReadAny('x', 'X') is char HexBaseChar) {
-                StringBuilder.Append(HexBaseChar);
+                NumberBuilder.Append(HexBaseChar);
                 BaseDigits = "0123456789ABCDEFabcdef";
             }
             else if (ReadAny('b', 'B') is char BinaryBaseChar) {
-                StringBuilder.Append(BinaryBaseChar);
+                NumberBuilder.Append(BinaryBaseChar);
                 BaseDigits = "01";
             }
             else if (ReadAny('o', 'O') is char OctalBaseChar) {
-                StringBuilder.Append(OctalBaseChar);
+                NumberBuilder.Append(OctalBaseChar);
                 BaseDigits = "01234567";
             }
         }
 
         // Read main number
-        if (ReadNumberNoExponent(ref StringBuilder, BaseDigits).TryGetError(out Error NumberCoreError)) {
-            PartialCharsRead = StringBuilder.ToString();
+        if (ReadNumberNoExponent(ref NumberBuilder, BaseDigits).TryGetError(out Error NumberCoreError)) {
+            PartialCharsRead = NumberBuilder.ToString();
             return NumberCoreError;
         }
 
         // Exponent
         if (ReadAny('e', 'E') is char ExponentChar) {
-            StringBuilder.Append(ExponentChar);
+            NumberBuilder.Append(ExponentChar);
 
             // Read exponent number
-            if (ReadNumberNoExponent(ref StringBuilder, BaseDigits).TryGetError(out Error ExponentCoreError)) {
-                PartialCharsRead = StringBuilder.ToString();
+            if (ReadNumberNoExponent(ref NumberBuilder, BaseDigits).TryGetError(out Error ExponentCoreError)) {
+                PartialCharsRead = NumberBuilder.ToString();
                 return ExponentCoreError;
             }
         }
 
         // End of number
         PartialCharsRead = default;
-        return new JsonhToken(JsonTokenType.Number, StringBuilder.ToString());
+        return new JsonhToken(JsonTokenType.Number, NumberBuilder.ToString());
     }
-    private Result ReadNumberNoExponent(scoped ref ValueStringBuilder StringBuilder, ReadOnlySpan<char> BaseDigits) {
+    private Result ReadNumberNoExponent(scoped ref ValueStringBuilder NumberBuilder, ReadOnlySpan<char> BaseDigits) {
         // Read sign
         ReadAny('-', '+');
 
@@ -913,12 +913,12 @@ public sealed partial class JsonhReader : IDisposable {
             // Digit
             if (BaseDigits.Contains(Next)) {
                 Read();
-                StringBuilder.Append(Next);
+                NumberBuilder.Append(Next);
             }
             // Decimal point
             else if (Next is '.') {
                 Read();
-                StringBuilder.Append(Next);
+                NumberBuilder.Append(Next);
 
                 // Duplicate decimal point
                 if (IsFraction) {
@@ -929,7 +929,7 @@ public sealed partial class JsonhReader : IDisposable {
             // Underscore
             else if (Next is '_') {
                 Read();
-                StringBuilder.Append(Next);
+                NumberBuilder.Append(Next);
             }
             // Other
             else {
@@ -938,12 +938,12 @@ public sealed partial class JsonhReader : IDisposable {
         }
 
         // Ensure not empty
-        if (StringBuilder.AsSpan().IsEmpty) {
+        if (NumberBuilder.AsSpan().IsEmpty) {
             return new Error("Empty number");
         }
 
         // Trailing underscore
-        if (StringBuilder.AsSpan().EndsWith("_")) {
+        if (NumberBuilder.AsSpan().EndsWith("_")) {
             return new Error("Trailing `_` in number");
         }
 
@@ -1024,7 +1024,7 @@ public sealed partial class JsonhReader : IDisposable {
         }
 
         // Read comment
-        using ValueStringBuilder StringBuilder = new(stackalloc char[64]);
+        using ValueStringBuilder CommentBuilder = new(stackalloc char[64]);
 
         while (true) {
             // Read char
@@ -1037,18 +1037,18 @@ public sealed partial class JsonhReader : IDisposable {
                 }
                 // End of block comment
                 if (Next is '*' && ReadOne('/')) {
-                    return new JsonhToken(JsonTokenType.Comment, StringBuilder.ToString());
+                    return new JsonhToken(JsonTokenType.Comment, CommentBuilder.ToString());
                 }
             }
             else {
                 // End of line comment
                 if (Next is null || NewlineChars.Contains(Next.Value)) {
-                    return new JsonhToken(JsonTokenType.Comment, StringBuilder.ToString());
+                    return new JsonhToken(JsonTokenType.Comment, CommentBuilder.ToString());
                 }
             }
 
             // Comment char
-            StringBuilder.Append(Next.Value);
+            CommentBuilder.Append(Next.Value);
         }
     }
     private void ReadWhitespace() {
