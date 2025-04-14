@@ -873,9 +873,9 @@ public sealed partial class JsonhReader : IDisposable {
         }
 
         // Read main number
-        if (ReadNumberNoExponent(ref NumberBuilder, BaseDigits).TryGetError(out Error NumberCoreError)) {
+        if (ReadNumberNoExponent(ref NumberBuilder, BaseDigits).TryGetError(out Error MainError)) {
             PartialCharsRead = NumberBuilder.ToString();
-            return NumberCoreError;
+            return MainError;
         }
 
         // Exponent
@@ -883,9 +883,9 @@ public sealed partial class JsonhReader : IDisposable {
             NumberBuilder.Append(ExponentChar);
 
             // Read exponent number
-            if (ReadNumberNoExponent(ref NumberBuilder, BaseDigits).TryGetError(out Error ExponentCoreError)) {
+            if (ReadNumberNoExponent(ref NumberBuilder, BaseDigits).TryGetError(out Error ExponentError)) {
                 PartialCharsRead = NumberBuilder.ToString();
-                return ExponentCoreError;
+                return ExponentError;
             }
         }
 
