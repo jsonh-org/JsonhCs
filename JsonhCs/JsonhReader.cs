@@ -904,6 +904,11 @@ public sealed partial class JsonhReader : IDisposable {
             }
         }
 
+        // Ensure not empty
+        if (StringBuilder.AsSpan().IsEmpty) {
+            return new Error("Empty number");
+        }
+
         // Trailing underscore
         if (StringBuilder.AsSpan().EndsWith("_")) {
             return new Error("Trailing `_` in number");
