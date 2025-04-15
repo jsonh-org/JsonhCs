@@ -1167,19 +1167,19 @@ public sealed partial class JsonhReader : IDisposable {
         return Result.Success;
     }
     private char? Peek() {
-        int Char = TextReader.Peek();
-        if (Char < 0) {
+        int NextAsInt = TextReader.Peek();
+        if (NextAsInt < 0) {
             return null;
         }
-        return (char)Char;
+        return (char)NextAsInt;
     }
     private char? Read() {
-        int Char = TextReader.Read();
-        if (Char < 0) {
+        int NextAsInt = TextReader.Read();
+        if (NextAsInt < 0) {
             return null;
         }
         CharCounter++;
-        return (char)Char;
+        return (char)NextAsInt;
     }
     private bool ReadOne(char Option) {
         if (Peek() == Option) {
