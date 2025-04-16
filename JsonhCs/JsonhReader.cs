@@ -688,7 +688,7 @@ public sealed partial class JsonhReader : IDisposable {
         if (StartQuoteCounter > 1) {
             // Pass 1: count leading whitespace -> newline
             bool HasLeadingWhitespaceNewline = false;
-            int LeadingWhitespaceNewlineCounter = -1;
+            int LeadingWhitespaceNewlineCounter = 0;
             for (int Index = 0; Index < StringBuilder.Length; Index++) {
                 char Next = StringBuilder[Index];
 
@@ -810,7 +810,7 @@ public sealed partial class JsonhReader : IDisposable {
                 break;
             }
 
-            // Read escape sequence
+            // Escape sequence
             if (Next is '\\') {
                 Read();
                 if (ReadEscapeSequence(ref StringBuilder).TryGetError(out Error EscapeSequenceError)) {
@@ -826,7 +826,7 @@ public sealed partial class JsonhReader : IDisposable {
             else if (NewlineChars.Contains(Next)) {
                 break;
             }
-            // Append string char
+            // Literal character
             else {
                 Read();
                 StringBuilder.Append(Next);
