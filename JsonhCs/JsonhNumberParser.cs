@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 using ExtendedNumerics;
 using ResultZero;
 
@@ -49,15 +49,15 @@ public static class JsonhNumberParser {
     /// </summary>
     private static Result<BigReal> ParseFractionalNumberWithExponent(ReadOnlySpan<char> Digits, ReadOnlySpan<char> BaseDigits, int Decimals) {
         // Find exponent
-        int DotIndex = Digits.IndexOfAny('e', 'E');
+        int ExponentIndex = Digits.IndexOfAny('e', 'E');
         // If no exponent then normalize real
-        if (DotIndex < 0) {
+        if (ExponentIndex < 0) {
             return ParseFractionalNumber(Digits, BaseDigits);
         }
 
         // Get mantissa and exponent
-        ReadOnlySpan<char> MantissaPart = Digits[..DotIndex];
-        ReadOnlySpan<char> ExponentPart = Digits[(DotIndex + 1)..];
+        ReadOnlySpan<char> MantissaPart = Digits[..ExponentIndex];
+        ReadOnlySpan<char> ExponentPart = Digits[(ExponentIndex + 1)..];
 
         // Parse mantissa and exponent
         if (ParseFractionalNumber(MantissaPart, BaseDigits).TryGetError(out Error MantissaError, out BigReal Mantissa)) {
