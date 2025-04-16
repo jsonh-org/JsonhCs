@@ -763,7 +763,7 @@ public sealed partial class JsonhReader : IDisposable {
         StringBuilder.Append(InitialChars);
 
         while (true) {
-            // Read char
+            // Peek char
             if (Peek() is not char Next) {
                 break;
             }
