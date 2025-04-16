@@ -62,4 +62,20 @@ public class EdgeCaseTests {
         Element.GetProperty("b").Deserialize<string>(JsonhReader.MiniJson).ShouldBe("\\z");
         Element.GetProperty("c").Deserialize<string>(JsonhReader.MiniJson).ShouldBe("5 \\");
     }
+    [Fact]
+    public void MultiQuotedStringsNoLastNewlineWhitespaceTest() {
+        string Jsonh = """"
+            """
+              hello world  """
+            """";
+        JsonhReader.ParseElement(Jsonh).Value.Deserialize<string>(JsonhReader.MiniJson).ShouldBe("\n  hello world  ");
+    }
+    [Fact]
+    public void MultiQuotedStringsNoFirstWhitespaceNewlineTest() {
+        string Jsonh = """"
+            """  hello world
+              """
+            """";
+        JsonhReader.ParseElement(Jsonh).Value.Deserialize<string>(JsonhReader.MiniJson).ShouldBe("  hello world\n  ");
+    }
 }

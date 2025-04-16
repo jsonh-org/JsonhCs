@@ -648,8 +648,6 @@ public sealed partial class JsonhReader : IDisposable {
 
         // Count multiple end quotes
         int EndQuoteCounter = 0;
-        // Find last newline
-        int LastNewlineIndex = -1;
 
         // Read string
         ValueStringBuilder StringBuilder = new(stackalloc char[64]);
@@ -682,20 +680,111 @@ public sealed partial class JsonhReader : IDisposable {
             }
             // Literal character
             else {
-                // Newline
-                if (NewlineChars.Contains(Next)) {
-                    LastNewlineIndex = StringBuilder.Length;
-                }
-
                 StringBuilder.Append(Next);
             }
+
+            /*// Multi-quoted string counting
+            if (StartQuoteCounter > 1) {
+                // Newline
+                if (NewlineChars.Contains(Next)) {
+                    // Reset whitespace
+                    LeadingWhitespaceCounter = 0;
+                    WhitespaceCounter = 0;
+                }
+                // Whitespace
+                else if (char.IsWhiteSpace(Next)) {
+                    // Increment whitespace
+                    bool IsLeadingWhitespace = WhitespaceCounter == LeadingWhitespaceCounter;
+                    WhitespaceCounter++;
+                    if (IsLeadingWhitespace) {
+                        LeadingWhitespaceCounter++;
+                    }
+                }
+                else {
+                    // Exit leading whitespace
+                    WhitespaceCounter = 0;
+                }
+            }*/
         }
 
-        // Trim leading whitespace in multiline string
+        /*
+         * Multi-quoted strings:
+         * Pass 0: read string
+         * Pass 1: check first whitespace + newline
+         * Pass 2: count last newline + whitespace
+         * Pass 3: strip first whitespace + newline
+         * Pass 4: strip last newline + whitespace
+         * Pass 5: strip leading whitespace
+        */
         if (StartQuoteCounter > 1) {
-            // Count leading whitespace preceding closing quotes
-            if (LastNewlineIndex != -1) {
-                int LeadingWhitespaceCount = StringBuilder.Length - LastNewlineIndex;
+            // Pass 1: check first whitespace + newline
+            bool HasFirstWhitespaceNewline = false;
+            for (int Index = 0; Index < StringBuilder.Length; Index++) {
+                char Next = StringBuilder[Index];
+
+                // Newline
+                if (NewlineChars.Contains(Next)) {
+                    HasFirstWhitespaceNewline = true;
+                    break;
+                }
+                // Non-whitespace
+                else if (!char.IsWhiteSpace(Next)) {
+                    break;
+                }
+            }
+
+            // Pass 2: count last newline + whitespace
+            bool HasLastNewlineWhitespace = false;
+            int LastWhitespaceCounter = 0;
+            for (int Index = 0; Index < StringBuilder.Length; Index++) {
+                char Next = StringBuilder[Index];
+
+                // Newline
+                if (NewlineChars.Contains(Next)) {
+                    HasLastNewlineWhitespace = true;
+                    LastWhitespaceCounter = 0;
+                }
+                // Whitespace
+                else if (char.IsWhiteSpace(Next)) {
+                    LastWhitespaceCounter++;
+                }
+                // Non-whitespace
+                else {
+                    HasLastNewlineWhitespace = false;
+                    LastWhitespaceCounter = 0;
+                }
+            }
+
+            //
+
+        }
+
+        /*// Strip whitespace in multi-quoted string
+        if (StartQuoteCounter > 1) {
+            // Get whitespace after last newline
+            int WhitespaceToStrip = LeadingWhitespaceCounter;
+            // Reset whitespace
+            WhitespaceCounter = 0;
+            LeadingWhitespaceCounter = 0;
+
+            // Strip whitespace
+            for (int Index = 0; Index < StringBuilder.Length; Index++) {
+                char Next = StringBuilder[Index];
+
+                // Newline
+                if (NewlineChars.Contains(Next)) {
+                    // Join CR LF
+                    if (Next is '\r' && Index + 1 < StringBuilder.Length && StringBuilder[Index + 1] is '\n') {
+                        Index++;
+                    }
+                    // Strip first whitespace + newline
+
+                }
+            }*/
+
+            /*// Count leading whitespace preceding closing quotes
+            if (MultiQuoteLastNewlineIndex != -1) {
+                int LeadingWhitespaceCount = StringBuilder.Length - MultiQuoteLastNewlineIndex;
 
                 // Remove leading whitespace from each line
                 if (LeadingWhitespaceCount > 0) {
@@ -711,6 +800,13 @@ public sealed partial class JsonhReader : IDisposable {
                             CurrentLeadingWhitespace = 0;
                             // Enter leading whitespace
                             IsLeadingWhitespace = true;
+
+                            if (Next is '\r' && Index + 1 < StringBuilder.Length && StringBuilder[Index + 1] is '\n') {
+                                
+                            }
+                            // Removing leading newline
+                            StringBuilder.Remove(0, Index);
+                            Index = 0;
                         }
                         // Leading whitespace
                         else if (IsLeadingWhitespace && CurrentLeadingWhitespace <= LeadingWhitespaceCount) {
@@ -722,6 +818,7 @@ public sealed partial class JsonhReader : IDisposable {
                                 if (CurrentLeadingWhitespace == LeadingWhitespaceCount) {
                                     // Remove leading whitespace
                                     StringBuilder.Remove(Index - CurrentLeadingWhitespace, CurrentLeadingWhitespace);
+                                    Index -= CurrentLeadingWhitespace;
                                     // Exit leading whitespace
                                     IsLeadingWhitespace = false;
                                 }
@@ -730,6 +827,7 @@ public sealed partial class JsonhReader : IDisposable {
                             else {
                                 // Remove partial leading whitespace
                                 StringBuilder.Remove(Index - CurrentLeadingWhitespace, CurrentLeadingWhitespace);
+                                Index -= CurrentLeadingWhitespace;
                                 // Exit leading whitespace
                                 IsLeadingWhitespace = false;
                             }
@@ -737,25 +835,24 @@ public sealed partial class JsonhReader : IDisposable {
                     }
 
                     // Remove leading whitespace from last line
-                    StringBuilder.Remove(StringBuilder.Length - LeadingWhitespaceCount, LeadingWhitespaceCount);
+                    StringBuilder.Remove(StringBuilder.Length - LeadingWhitespaceCount, LeadingWhitespaceCount);*/
 
-                    // Remove leading newline
+                    /*// Remove leading newline
                     if (StringBuilder.Length >= 1) {
-                        char LeadingChar = StringBuilder[0];
-                        if (NewlineChars.Contains(LeadingChar)) {
+                        if (MultiQuoteLeadingNewline is not null) {
                             int NewlineLength = 1;
                             // Join CR LF
-                            if (LeadingChar is '\r' && StringBuilder.Length >= 2 && StringBuilder[1] is '\n') {
+                            if (MultiQuoteLeadingNewline is '\r' && StringBuilder.Length >= 2 && StringBuilder[1] is '\n') {
                                 NewlineLength = 2;
                             }
 
                             // Remove leading newline
                             StringBuilder.Remove(0, NewlineLength);
                         }
-                    }
-                }
-            }
-        }
+                    }*/
+                /*}
+            }*/
+        //}
 
         // End of string
         return new JsonhToken(JsonTokenType.String, StringBuilder.ToString());
