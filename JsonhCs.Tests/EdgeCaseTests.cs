@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 
 namespace JsonhCs.Tests;
 
@@ -17,7 +17,8 @@ public class EdgeCaseTests {
         string Jsonh = """
             a: {
             """;
-        JsonhReader.ParseElement<string[]>(Jsonh).IsError.ShouldBeTrue();
+
+        JsonhReader.ParseElement(Jsonh).IsError.ShouldBeTrue();
     }
     [Fact]
     public void NestedBracelessObjectTest() {
@@ -27,6 +28,7 @@ public class EdgeCaseTests {
                 c: d
             ]
             """;
+
         JsonhReader.ParseElement<string[]>(Jsonh).IsError.ShouldBeTrue();
     }
     [Fact]
@@ -36,6 +38,7 @@ public class EdgeCaseTests {
               a b  , 
             ]
             """;
+
         JsonhReader.ParseElement<string[]>(Jsonh).Value.ShouldBe(["a b"]);
     }
     [Fact]
@@ -46,6 +49,7 @@ public class EdgeCaseTests {
             }
             """;
         JsonElement Element = JsonhReader.ParseElement(Jsonh).Value;
+
         Element.GetPropertyCount().ShouldBe(1);
         Element.GetProperty("a b").Deserialize<string>(JsonhReader.MiniJson).ShouldBe("c d");
     }
@@ -57,6 +61,7 @@ public class EdgeCaseTests {
             c: 5 \\
             """;
         JsonElement Element = JsonhReader.ParseElement(Jsonh).Value;
+
         Element.GetPropertyCount().ShouldBe(3);
         Element.GetProperty("a").Deserialize<string>(JsonhReader.MiniJson).ShouldBe("\"5");
         Element.GetProperty("b").Deserialize<string>(JsonhReader.MiniJson).ShouldBe("\\z");
@@ -68,6 +73,7 @@ public class EdgeCaseTests {
             """
               hello world  """
             """";
+
         JsonhReader.ParseElement(Jsonh).Value.Deserialize<string>(JsonhReader.MiniJson).ShouldBe("\n  hello world  ");
     }
     [Fact]
@@ -76,6 +82,7 @@ public class EdgeCaseTests {
             """  hello world
               """
             """";
+
         JsonhReader.ParseElement(Jsonh).Value.Deserialize<string>(JsonhReader.MiniJson).ShouldBe("  hello world\n  ");
     }
 }

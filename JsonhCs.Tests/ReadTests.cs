@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using ResultZero;
 
 namespace JsonhCs.Tests;
@@ -11,8 +11,8 @@ public class ReadTests {
               "a": "b"
             }
             """;
-
-        Result<JsonhToken>[] Tokens = [.. new JsonhReader(Jsonh).ReadElement()];
+        using JsonhReader Reader = new(Jsonh);
+        Result<JsonhToken>[] Tokens = [.. Reader.ReadElement()];
 
         Tokens.ShouldAllBe(Token => Token.IsValue);
         Tokens[0].Value.JsonType.ShouldBe(JsonTokenType.StartObject);

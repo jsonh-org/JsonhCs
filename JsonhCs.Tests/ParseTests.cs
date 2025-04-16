@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using ExtendedNumerics;
 
 namespace JsonhCs.Tests;
@@ -24,7 +24,7 @@ public class ParseTests {
     }
     [Fact]
     public void MultiQuotedStringTest() {
-        string Jsonh = """""  
+        string Jsonh = """""
                 """"
                   Hello! Here's a quote: ". Now a double quote: "". And a triple quote! """. Escape: \\\U0001F47D.
                  """"
@@ -57,7 +57,7 @@ public class ParseTests {
     }
     [Fact]
     public void BracelessObjectTest() {
-        string Jsonh = """""  
+        string Jsonh = """""
             a: b
             c: d
             """"";
@@ -69,15 +69,15 @@ public class ParseTests {
     }
     [Fact]
     public void CommentTest() {
-        string Jsonh = """""  
+        string Jsonh = """""
             [
                 1 # hash comment
                 2 // line comment
                 3 /* block comment */,4
             ]
             """"";
-        JsonElement Element = JsonhReader.ParseElement(Jsonh).Value;
+        int[] Element = JsonhReader.ParseElement<int[]>(Jsonh).Value!;
 
-        Element.Deserialize<int[]>(JsonhReader.MiniJson).ShouldBe([1, 2, 3, 4]);
+        Element.ShouldBe([1, 2, 3, 4]);
     }
 }
