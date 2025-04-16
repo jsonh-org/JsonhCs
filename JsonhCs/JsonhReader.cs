@@ -648,6 +648,8 @@ public sealed partial class JsonhReader : IDisposable {
 
         // Count multiple end quotes
         int EndQuoteCounter = 0;
+        // Find last newline
+        int LastNewlineIndex = -1;
 
         // Read string
         ValueStringBuilder StringBuilder = new(stackalloc char[64]);
@@ -680,6 +682,11 @@ public sealed partial class JsonhReader : IDisposable {
             }
             // Literal character
             else {
+                // Newline
+                if (NewlineChars.Contains(Next)) {
+                    LastNewlineIndex = StringBuilder.Length;
+                }
+
                 StringBuilder.Append(Next);
             }
         }
@@ -687,7 +694,6 @@ public sealed partial class JsonhReader : IDisposable {
         // Trim leading whitespace in multiline string
         if (StartQuoteCounter > 1) {
             // Count leading whitespace preceding closing quotes
-            int LastNewlineIndex = StringBuilder.AsSpan().LastIndexOfAny(NewlineChars);
             if (LastNewlineIndex != -1) {
                 int LeadingWhitespaceCount = StringBuilder.Length - LastNewlineIndex;
 
