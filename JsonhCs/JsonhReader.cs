@@ -682,92 +682,13 @@ public sealed partial class JsonhReader : IDisposable {
             else {
                 StringBuilder.Append(Next);
             }
-
-            /*// Multi-quoted string counting
-            if (StartQuoteCounter > 1) {
-                // Newline
-                if (NewlineChars.Contains(Next)) {
-                    // Reset whitespace
-                    LeadingWhitespaceCounter = 0;
-                    WhitespaceCounter = 0;
-                }
-                // Whitespace
-                else if (char.IsWhiteSpace(Next)) {
-                    // Increment whitespace
-                    bool IsLeadingWhitespace = WhitespaceCounter == LeadingWhitespaceCounter;
-                    WhitespaceCounter++;
-                    if (IsLeadingWhitespace) {
-                        LeadingWhitespaceCounter++;
-                    }
-                }
-                else {
-                    // Exit leading whitespace
-                    WhitespaceCounter = 0;
-                }
-            }*/
         }
 
-        /*
-         * Multi-quoted strings:
-         * Pass 0: read string
-         * Pass 1: check first whitespace + newline
-         * Pass 2: count last newline + whitespace
-         * Pass 3: strip first whitespace + newline
-         * Pass 4: strip last newline + whitespace
-         * Pass 5: strip leading whitespace
-        */
+        // Condition: skip remaining steps unless started with multiple quotes
         if (StartQuoteCounter > 1) {
-            // Pass 1: check first whitespace + newline
-            bool HasFirstWhitespaceNewline = false;
-            for (int Index = 0; Index < StringBuilder.Length; Index++) {
-                char Next = StringBuilder[Index];
-
-                // Newline
-                if (NewlineChars.Contains(Next)) {
-                    HasFirstWhitespaceNewline = true;
-                    break;
-                }
-                // Non-whitespace
-                else if (!char.IsWhiteSpace(Next)) {
-                    break;
-                }
-            }
-
-            // Pass 2: count last newline + whitespace
-            bool HasLastNewlineWhitespace = false;
-            int LastWhitespaceCounter = 0;
-            for (int Index = 0; Index < StringBuilder.Length; Index++) {
-                char Next = StringBuilder[Index];
-
-                // Newline
-                if (NewlineChars.Contains(Next)) {
-                    HasLastNewlineWhitespace = true;
-                    LastWhitespaceCounter = 0;
-                }
-                // Whitespace
-                else if (char.IsWhiteSpace(Next)) {
-                    LastWhitespaceCounter++;
-                }
-                // Non-whitespace
-                else {
-                    HasLastNewlineWhitespace = false;
-                    LastWhitespaceCounter = 0;
-                }
-            }
-
-            //
-
-        }
-
-        /*// Strip whitespace in multi-quoted string
-        if (StartQuoteCounter > 1) {
-            // Get whitespace after last newline
-            int WhitespaceToStrip = LeadingWhitespaceCounter;
-            // Reset whitespace
-            WhitespaceCounter = 0;
-            LeadingWhitespaceCounter = 0;
-
-            // Strip whitespace
+            // Pass 1: count leading whitespace -> newline
+            bool HasLeadingWhitespaceNewline = false;
+            int LeadingWhitespaceNewlineCounter = -1;
             for (int Index = 0; Index < StringBuilder.Length; Index++) {
                 char Next = StringBuilder[Index];
 
@@ -777,82 +698,100 @@ public sealed partial class JsonhReader : IDisposable {
                     if (Next is '\r' && Index + 1 < StringBuilder.Length && StringBuilder[Index + 1] is '\n') {
                         Index++;
                     }
-                    // Strip first whitespace + newline
 
+                    HasLeadingWhitespaceNewline = true;
+                    LeadingWhitespaceNewlineCounter = Index + 1;
+                    break;
                 }
-            }*/
+                // Non-whitespace
+                else if (!char.IsWhiteSpace(Next)) {
+                    break;
+                }
+            }
 
-            /*// Count leading whitespace preceding closing quotes
-            if (MultiQuoteLastNewlineIndex != -1) {
-                int LeadingWhitespaceCount = StringBuilder.Length - MultiQuoteLastNewlineIndex;
+            // Condition: skip remaining steps if pass 1 failed
+            if (HasLeadingWhitespaceNewline) {
+                // Pass 2: count trailing newline -> whitespace
+                bool HasTrailingNewlineWhitespace = false;
+                int LastNewlineIndex = 0;
+                int TrailingWhitespaceCounter = 0;
+                for (int Index = 0; Index < StringBuilder.Length; Index++) {
+                    char Next = StringBuilder[Index];
 
-                // Remove leading whitespace from each line
-                if (LeadingWhitespaceCount > 0) {
-                    int CurrentLeadingWhitespace = 0;
-                    bool IsLeadingWhitespace = true;
+                    // Newline
+                    if (NewlineChars.Contains(Next)) {
+                        HasTrailingNewlineWhitespace = true;
+                        LastNewlineIndex = Index;
+                        TrailingWhitespaceCounter = 0;
 
-                    for (int Index = 0; Index < StringBuilder.Length; Index++) {
-                        char Next = StringBuilder[Index];
-
-                        // Newline
-                        if (NewlineChars.Contains(Next)) {
-                            // Reset leading whitespace counter
-                            CurrentLeadingWhitespace = 0;
-                            // Enter leading whitespace
-                            IsLeadingWhitespace = true;
-
-                            if (Next is '\r' && Index + 1 < StringBuilder.Length && StringBuilder[Index + 1] is '\n') {
-                                
-                            }
-                            // Removing leading newline
-                            StringBuilder.Remove(0, Index);
-                            Index = 0;
+                        // Join CR LF
+                        if (Next is '\r' && Index + 1 < StringBuilder.Length && StringBuilder[Index + 1] is '\n') {
+                            Index++;
                         }
-                        // Leading whitespace
-                        else if (IsLeadingWhitespace && CurrentLeadingWhitespace <= LeadingWhitespaceCount) {
+                    }
+                    // Whitespace
+                    else if (char.IsWhiteSpace(Next)) {
+                        TrailingWhitespaceCounter++;
+                    }
+                    // Non-whitespace
+                    else {
+                        HasTrailingNewlineWhitespace = false;
+                        TrailingWhitespaceCounter = 0;
+                    }
+                }
+
+                // Condition: skip remaining steps if pass 2 failed
+                if (HasTrailingNewlineWhitespace) {
+                    // Pass 3: strip last newline -> whitespace
+                    StringBuilder.Remove(LastNewlineIndex, StringBuilder.Length - LastNewlineIndex);
+
+                    // Pass 4: strip first whitespace -> newline
+                    StringBuilder.Remove(0, LeadingWhitespaceNewlineCounter);
+
+                    // Condition: skip remaining steps if no trailing whitespace
+                    if (TrailingWhitespaceCounter > 0) {
+                        // Pass 5: strip line-leading whitespace
+                        bool IsLineLeadingWhitespace = true;
+                        int LineLeadingWhitespaceCounter = 0;
+                        for (int Index = 0; Index < StringBuilder.Length; Index++) {
+                            char Next = StringBuilder[Index];
+
+                            // Newline
+                            if (NewlineChars.Contains(Next)) {
+                                IsLineLeadingWhitespace = true;
+                                LineLeadingWhitespaceCounter = 0;
+                            }
                             // Whitespace
-                            if (char.IsWhiteSpace(Next)) {
-                                // Increment leading whitespace counter
-                                CurrentLeadingWhitespace++;
-                                // Maximum leading whitespace reached
-                                if (CurrentLeadingWhitespace == LeadingWhitespaceCount) {
-                                    // Remove leading whitespace
-                                    StringBuilder.Remove(Index - CurrentLeadingWhitespace, CurrentLeadingWhitespace);
-                                    Index -= CurrentLeadingWhitespace;
-                                    // Exit leading whitespace
-                                    IsLeadingWhitespace = false;
+                            else if (char.IsWhiteSpace(Next)) {
+                                if (IsLineLeadingWhitespace) {
+                                    // Increment line-leading whitespace
+                                    LineLeadingWhitespaceCounter++;
+
+                                    // Maximum line-leading whitespace reached
+                                    if (LineLeadingWhitespaceCounter == TrailingWhitespaceCounter) {
+                                        // Remove line-leading whitespace
+                                        StringBuilder.Remove(Index + 1 - LineLeadingWhitespaceCounter, LineLeadingWhitespaceCounter);
+                                        Index -= LineLeadingWhitespaceCounter;
+                                        // Exit line-leading whitespace
+                                        IsLineLeadingWhitespace = false;
+                                    }
                                 }
                             }
                             // Non-whitespace
                             else {
-                                // Remove partial leading whitespace
-                                StringBuilder.Remove(Index - CurrentLeadingWhitespace, CurrentLeadingWhitespace);
-                                Index -= CurrentLeadingWhitespace;
-                                // Exit leading whitespace
-                                IsLeadingWhitespace = false;
+                                if (IsLineLeadingWhitespace) {
+                                    // Remove partial line-leading whitespace
+                                    StringBuilder.Remove(Index - LineLeadingWhitespaceCounter, LineLeadingWhitespaceCounter);
+                                    Index -= LineLeadingWhitespaceCounter;
+                                    // Exit line-leading whitespace
+                                    IsLineLeadingWhitespace = false;
+                                }
                             }
                         }
                     }
-
-                    // Remove leading whitespace from last line
-                    StringBuilder.Remove(StringBuilder.Length - LeadingWhitespaceCount, LeadingWhitespaceCount);*/
-
-                    /*// Remove leading newline
-                    if (StringBuilder.Length >= 1) {
-                        if (MultiQuoteLeadingNewline is not null) {
-                            int NewlineLength = 1;
-                            // Join CR LF
-                            if (MultiQuoteLeadingNewline is '\r' && StringBuilder.Length >= 2 && StringBuilder[1] is '\n') {
-                                NewlineLength = 2;
-                            }
-
-                            // Remove leading newline
-                            StringBuilder.Remove(0, NewlineLength);
-                        }
-                    }*/
-                /*}
-            }*/
-        //}
+                }
+            }
+        }
 
         // End of string
         return new JsonhToken(JsonTokenType.String, StringBuilder.ToString());
