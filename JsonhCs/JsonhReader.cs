@@ -28,11 +28,11 @@ public sealed partial class JsonhReader : IDisposable {
     public long CharCounter { get; set; }
 
     /// <summary>
-    /// Characters that cannot be used in quoteless strings.
+    /// Characters that cannot be used unescaped in quoteless strings.
     /// </summary>
     private static readonly SearchValues<char> ReservedChars = SearchValues.Create(['\\', ',', ':', '[', ']', '{', '}', '/', '#', '"', '\'']);
     /// <summary>
-    /// Characters that serve as newlines in strings.
+    /// Characters that are considered newlines.
     /// </summary>
     private static readonly SearchValues<char> NewlineChars = SearchValues.Create(['\n', '\r', '\u2028', '\u2029']);
 
