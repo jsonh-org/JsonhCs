@@ -1,4 +1,4 @@
-﻿using System.Buffers;
+using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text;
@@ -742,10 +742,10 @@ public sealed partial class JsonhReader : IDisposable {
 
                 // Condition: skip remaining steps if pass 2 failed
                 if (HasTrailingNewlineWhitespace) {
-                    // Pass 3: strip last newline -> whitespace
+                    // Pass 3: strip trailing newline -> whitespace
                     StringBuilder.Remove(LastNewlineIndex, StringBuilder.Length - LastNewlineIndex);
 
-                    // Pass 4: strip first whitespace -> newline
+                    // Pass 4: strip leading whitespace -> newline
                     StringBuilder.Remove(0, LeadingWhitespaceNewlineCounter);
 
                     // Condition: skip remaining steps if no trailing whitespace
