@@ -29,10 +29,15 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/jsonh-org/JsonhCs</RepositoryUrl>
     <PackageTags>JSONH; JSON; JSON5; HJSON; config; parser</PackageTags>
+    <PackageIcon>IconUpscaledSquare.png</PackageIcon>
   </PropertyGroup>
 
   <ItemGroup>
     <None Include="../README.md">
+      <Pack>True</Pack>
+      <PackagePath>/</PackagePath>
+    </None>
+    <None Include="../../Jsonh/IconUpscaledSquare.png">
       <Pack>True</Pack>
       <PackagePath>/</PackagePath>
     </None>
