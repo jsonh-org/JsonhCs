@@ -838,8 +838,8 @@ public sealed partial class JsonhReader : IDisposable {
             return new Error("Empty quoteless string");
         }
 
-        // Trim trailing whitespace
-        StringBuilder.TrimEnd();
+        // Trim whitespace
+        StringBuilder.Trim();
 
         // Match named literal
         if (IsNamedLiteralPossible) {

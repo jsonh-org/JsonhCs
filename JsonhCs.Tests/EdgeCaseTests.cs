@@ -85,4 +85,12 @@ public class EdgeCaseTests {
 
         JsonhReader.ParseElement(Jsonh).Value.Deserialize<string>(JsonhReader.MiniJson).ShouldBe("  hello world\n  ");
     }
+    [Fact]
+    public void QuotelessStringsEscapedLeadingTrailingWhitespaceTest() {
+        string Jsonh = """"
+            \nZ\ \r
+            """";
+
+        JsonhReader.ParseElement(Jsonh).Value.Deserialize<string>(JsonhReader.MiniJson).ShouldBe("Z");
+    }
 }
