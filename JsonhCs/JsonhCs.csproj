@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <VersionPrefix>3.2</VersionPrefix>
+    <VersionPrefix>3.3</VersionPrefix>
     <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
     <LangVersion>latest</LangVersion>
     <RootNamespace>JsonhCs</RootNamespace>
@@ -28,7 +28,7 @@
     <PackageProjectUrl>https://github.com/jsonh-org/JsonhCs</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/jsonh-org/JsonhCs</RepositoryUrl>
-    <PackageTags>JSONH; JSON; JSON5; HJSON; config; parser</PackageTags>
+    <PackageTags>JSONH; JSON for Humans; JSON; JSON5; HJSON; config; parser</PackageTags>
     <PackageIcon>IconUpscaledSquare.png</PackageIcon>
   </PropertyGroup>
 
