@@ -902,7 +902,7 @@ public sealed partial class JsonhReader : IDisposable {
 
             if (ReadAny('x', 'X') is char HexBaseChar) {
                 NumberBuilder.Append(HexBaseChar);
-                BaseDigits = "0123456789ABCDEFabcdef";
+                BaseDigits = "0123456789abcdef";
             }
             else if (ReadAny('b', 'B') is char BinaryBaseChar) {
                 NumberBuilder.Append(BinaryBaseChar);
@@ -953,7 +953,7 @@ public sealed partial class JsonhReader : IDisposable {
             }
 
             // Digit
-            if (BaseDigits.Contains(Next)) {
+            if (BaseDigits.Contains(char.ToLowerInvariant(Next))) {
                 Read();
                 NumberBuilder.Append(Next);
             }

@@ -23,7 +23,7 @@ public static class JsonhNumberParser {
         string BaseDigits = "0123456789";
         // Hexadecimal
         if (JsonhNumber.StartsWith("0x", StringComparison.OrdinalIgnoreCase)) {
-            BaseDigits = "0123456789ABCDEFabcdef";
+            BaseDigits = "0123456789abcdef";
             JsonhNumber = JsonhNumber[2..];
         }
         // Binary
@@ -48,8 +48,11 @@ public static class JsonhNumberParser {
     /// Converts a fractional number with an exponent (e.g. <c>12.3e4.5</c>) from the given base (e.g. <c>01234567</c>) to a base-10 real.
     /// </summary>
     private static Result<BigReal> ParseFractionalNumberWithExponent(ReadOnlySpan<char> Digits, ReadOnlySpan<char> BaseDigits, int Decimals) {
-        // Find exponent
-        int ExponentIndex = Digits.IndexOfAny('e', 'E');
+        // Find exponent (unless hexadecimal)
+        int ExponentIndex = -1;
+        if (!BaseDigits.Contains('e')) {
+            ExponentIndex = Digits.IndexOfAny('e', 'E');
+        }
         // If no exponent then normalize real
         if (ExponentIndex < 0) {
             return ParseFractionalNumber(Digits, BaseDigits);
@@ -136,7 +139,7 @@ public static class JsonhNumberParser {
         for (int Index = 0; Index < Digits.Length; Index++) {
             // Get current digit
             char DigitChar = Digits[Index];
-            int DigitInt = BaseDigits.IndexOf(DigitChar);
+            int DigitInt = BaseDigits.IndexOf(char.ToLowerInvariant(DigitChar));
 
             // Ensure digit is valid
             if (DigitInt < 0) {

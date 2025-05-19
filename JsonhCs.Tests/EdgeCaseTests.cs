@@ -93,4 +93,12 @@ public class EdgeCaseTests {
 
         JsonhReader.ParseElement(Jsonh).Value.Deserialize<string>(JsonhReader.MiniJson).ShouldBe("Z");
     }
+    [Fact]
+    public void HexNumberWithETest() {
+        string Jsonh = """"
+            0x5e3
+            """";
+
+        JsonhReader.ParseElement(Jsonh).Value.Deserialize<int>(JsonhReader.MiniJson).ShouldBe(0x5e3);
+    }
 }
