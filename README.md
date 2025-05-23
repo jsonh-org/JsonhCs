@@ -9,7 +9,9 @@ JSONH provides a much more elegant way to write JSON that's designed for humans 
 
 Since JSONH is compatible with JSON, any JSONH syntax can be represented with equivalent JSON.
 
-JsonhCs is an implementation of [JSONH v1](https://github.com/jsonh-org/Jsonh).
+## JsonhCs
+
+JsonhCs is a parser implementation of [JSONH v1](https://github.com/jsonh-org/Jsonh) for C# .NET.
 
 ## Example
 
