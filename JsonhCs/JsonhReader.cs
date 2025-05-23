@@ -86,6 +86,10 @@ public sealed partial class JsonhReader : IDisposable {
     public static Result<JsonElement> ParseElement(TextReader TextReader, JsonhReaderOptions? Options = null) {
         return ParseElement<JsonElement>(TextReader, Options);
     }
+    /// <inheritdoc cref="ParseElement{T}(TextReader, JsonhReaderOptions?)"/>
+    public static Result<JsonNode?> ParseNode(TextReader TextReader, JsonhReaderOptions? Options = null) {
+        return new JsonhReader(TextReader, Options).ParseNode();
+    }
     /// <summary>
     /// Parses a single element from a stream using a given encoding.
     /// </summary>
@@ -97,6 +101,10 @@ public sealed partial class JsonhReader : IDisposable {
     [RequiresUnreferencedCode(UnreferencedCodeMessage), RequiresDynamicCode(UnreferencedCodeMessage)]
     public static Result<JsonElement> ParseElement(Stream Stream, Encoding Encoding, JsonhReaderOptions? Options = null) {
         return ParseElement<JsonElement>(Stream, Encoding, Options);
+    }
+    /// <inheritdoc cref="ParseElement{T}(Stream, Encoding, JsonhReaderOptions?)"/>
+    public static Result<JsonNode?> ParseNode(Stream Stream, Encoding Encoding, JsonhReaderOptions? Options = null) {
+        return new JsonhReader(Stream, Encoding, Options).ParseNode();
     }
     /// <summary>
     /// Parses a single element from a stream using the byte-order marks to detect the encoding.
@@ -110,6 +118,10 @@ public sealed partial class JsonhReader : IDisposable {
     public static Result<JsonElement> ParseElement(Stream Stream, JsonhReaderOptions? Options = null) {
         return ParseElement<JsonElement>(Stream, Options);
     }
+    /// <inheritdoc cref="ParseElement{T}(Stream, JsonhReaderOptions?)"/>
+    public static Result<JsonNode?> ParseNode(Stream Stream, JsonhReaderOptions? Options = null) {
+        return new JsonhReader(Stream, Options).ParseNode();
+    }
     /// <summary>
     /// Parses a single element from a string.
     /// </summary>
@@ -121,6 +133,10 @@ public sealed partial class JsonhReader : IDisposable {
     [RequiresUnreferencedCode(UnreferencedCodeMessage), RequiresDynamicCode(UnreferencedCodeMessage)]
     public static Result<JsonElement> ParseElement(string String, JsonhReaderOptions? Options = null) {
         return ParseElement<JsonElement>(String, Options);
+    }
+    /// <inheritdoc cref="ParseElement{T}(string, JsonhReaderOptions?)"/>
+    public static Result<JsonNode?> ParseNode(string String, JsonhReaderOptions? Options = null) {
+        return new JsonhReader(String, Options).ParseNode();
     }
 
     /// <summary>
