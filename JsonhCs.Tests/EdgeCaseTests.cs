@@ -87,25 +87,31 @@ public class EdgeCaseTests {
     }
     [Fact]
     public void QuotelessStringsEscapedLeadingTrailingWhitespaceTest() {
-        string Jsonh = """"
+        string Jsonh = """
             \nZ\ \r
-            """";
+            """;
 
         JsonhReader.ParseElement(Jsonh).Value.Deserialize<string>(JsonhReader.MiniJson).ShouldBe("Z");
     }
     [Fact]
     public void HexNumberWithETest() {
-        string Jsonh = """"
+        string Jsonh = """
             0x5e3
-            """";
+            """;
 
         JsonhReader.ParseElement(Jsonh).Value.Deserialize<int>(JsonhReader.MiniJson).ShouldBe(0x5e3);
+
+        string Jsonh2 = """
+            0x5e+3
+            """;
+
+        JsonhReader.ParseElement(Jsonh2).Value.ValueKind.ShouldBe(JsonValueKind.String);
     }
     [Fact]
     public void NumberWithRepeatedUnderscoresTest() {
-        string Jsonh = """"
+        string Jsonh = """
             100__000
-            """";
+            """;
 
         JsonhReader.ParseElement(Jsonh).Value.Deserialize<int>(JsonhReader.MiniJson).ShouldBe(100__000);
     }
