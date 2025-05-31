@@ -937,13 +937,15 @@ public sealed partial class JsonhReader : IDisposable {
         }
 
         // Hexadecimal exponent
-        if (NumberBuilder[^1] is 'e' or 'E' && ReadAny('+', '-') is char HexadecimalExponentSign) {
-            NumberBuilder.Append(HexadecimalExponentSign);
+        if (NumberBuilder[^1] is 'e' or 'E') {
+            if (ReadAny('+', '-') is char ExponentSign) {
+                NumberBuilder.Append(ExponentSign);
 
-            // Read exponent number
-            if (ReadNumberNoExponent(ref NumberBuilder, BaseDigits).TryGetError(out Error ExponentError)) {
-                PartialCharsRead = NumberBuilder.ToString();
-                return ExponentError;
+                // Read exponent number
+                if (ReadNumberNoExponent(ref NumberBuilder, BaseDigits).TryGetError(out Error ExponentError)) {
+                    PartialCharsRead = NumberBuilder.ToString();
+                    return ExponentError;
+                }
             }
         }
         // Exponent
