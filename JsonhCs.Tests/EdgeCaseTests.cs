@@ -105,7 +105,7 @@ public class EdgeCaseTests {
             0x5e+3
             """;
 
-        JsonhReader.ParseElement(Jsonh2).Value.ValueKind.ShouldBe(JsonValueKind.String);
+        JsonhReader.ParseElement(Jsonh2).Value.Deserialize<int>(JsonhReader.MiniJson).ShouldBe(5000);
     }
     [Fact]
     public void NumberWithRepeatedUnderscoresTest() {

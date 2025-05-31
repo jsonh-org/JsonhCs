@@ -936,16 +936,24 @@ public sealed partial class JsonhReader : IDisposable {
             return MainError;
         }
 
-        // Exponent
-        if (!BaseDigits.Contains('e')) {
-            if (ReadAny('e', 'E') is char ExponentChar) {
-                NumberBuilder.Append(ExponentChar);
+        // Hexadecimal exponent
+        if (NumberBuilder[^1] is 'e' or 'E' && ReadAny('+', '-') is char HexadecimalExponentSign) {
+            NumberBuilder.Append(HexadecimalExponentSign);
 
-                // Read exponent number
-                if (ReadNumberNoExponent(ref NumberBuilder, BaseDigits).TryGetError(out Error ExponentError)) {
-                    PartialCharsRead = NumberBuilder.ToString();
-                    return ExponentError;
-                }
+            // Read exponent number
+            if (ReadNumberNoExponent(ref NumberBuilder, BaseDigits).TryGetError(out Error ExponentError)) {
+                PartialCharsRead = NumberBuilder.ToString();
+                return ExponentError;
+            }
+        }
+        // Exponent
+        else if (ReadAny('e', 'E') is char ExponentChar) {
+            NumberBuilder.Append(ExponentChar);
+
+            // Read exponent number
+            if (ReadNumberNoExponent(ref NumberBuilder, BaseDigits).TryGetError(out Error ExponentError)) {
+                PartialCharsRead = NumberBuilder.ToString();
+                return ExponentError;
             }
         }
 

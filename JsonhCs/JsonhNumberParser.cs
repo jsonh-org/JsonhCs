@@ -48,11 +48,26 @@ public static class JsonhNumberParser {
     /// Converts a fractional number with an exponent (e.g. <c>12.3e4.5</c>) from the given base (e.g. <c>01234567</c>) to a base-10 real.
     /// </summary>
     private static Result<BigReal> ParseFractionalNumberWithExponent(ReadOnlySpan<char> Digits, ReadOnlySpan<char> BaseDigits, int Decimals) {
-        // Find exponent (unless hexadecimal)
+        // Find exponent
         int ExponentIndex = -1;
-        if (!BaseDigits.Contains('e')) {
+        // Hexadecimal exponent
+        if (BaseDigits.Contains('e')) {
+            for (int Index = 0; Index < Digits.Length; Index++) {
+                if (Digits[Index] is not ('e' or 'E')) {
+                    continue;
+                }
+                if (Index + 1 >= Digits.Length || Digits[Index + 1] is not ('+' or '-')) {
+                    continue;
+                }
+                ExponentIndex = Index;
+                break;
+            }
+        }
+        // Exponent
+        else {
             ExponentIndex = Digits.IndexOfAny('e', 'E');
         }
+        
         // If no exponent then normalize real
         if (ExponentIndex < 0) {
             return ParseFractionalNumber(Digits, BaseDigits);
