@@ -115,4 +115,12 @@ public class EdgeCaseTests {
 
         JsonhReader.ParseElement(Jsonh).Value.Deserialize<int>(JsonhReader.MiniJson).ShouldBe(100__000);
     }
+    [Fact]
+    public void NumberWithUnderscoreAfterBaseSpecifierTest() {
+        string Jsonh = """
+            0b_100
+            """;
+
+        JsonhReader.ParseElement(Jsonh).Value.Deserialize<int>(JsonhReader.MiniJson).ShouldBe(0b_100);
+    }
 }
