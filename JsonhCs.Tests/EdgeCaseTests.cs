@@ -123,4 +123,12 @@ public class EdgeCaseTests {
 
         JsonhReader.ParseElement(Jsonh).Value.Deserialize<int>(JsonhReader.MiniJson).ShouldBe(0b_100);
     }
+    [Fact]
+    public void NegativeNumberWithBaseSpecifierTest() {
+        string Jsonh = """
+            -0x5
+            """;
+
+        JsonhReader.ParseElement(Jsonh).Value.Deserialize<int>(JsonhReader.MiniJson).ShouldBe(-0x5);
+    }
 }

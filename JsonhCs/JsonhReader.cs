@@ -911,6 +911,11 @@ public sealed partial class JsonhReader : IDisposable {
         ValueStringBuilder NumberBuilder = new(stackalloc char[64]);
         using ValueStringBuilder ReadOnlyNumberBuilder = NumberBuilder; // Can't pass using variables by-ref
 
+        // Read sign
+        if (ReadAny('-', '+') is char Sign) {
+            NumberBuilder.Append(Sign);
+        }
+
         // Read base
         string BaseDigits = "0123456789";
         bool HasBaseSpecifier = false;
@@ -942,6 +947,7 @@ public sealed partial class JsonhReader : IDisposable {
 
         // Hexadecimal exponent
         if (NumberBuilder[^1] is 'e' or 'E') {
+            // Read sign
             if (ReadAny('+', '-') is char ExponentSign) {
                 NumberBuilder.Append(ExponentSign);
 
@@ -956,6 +962,11 @@ public sealed partial class JsonhReader : IDisposable {
         else if (ReadAny('e', 'E') is char ExponentChar) {
             NumberBuilder.Append(ExponentChar);
 
+            // Read sign
+            if (ReadAny('-', '+') is char ExponentSign) {
+                NumberBuilder.Append(ExponentSign);
+            }
+
             // Read exponent number
             if (ReadNumberNoExponent(ref NumberBuilder, BaseDigits, HasBaseSpecifier).TryGetError(out Error ExponentError)) {
                 PartialCharsRead = NumberBuilder.ToString();
@@ -968,9 +979,6 @@ public sealed partial class JsonhReader : IDisposable {
         return new JsonhToken(JsonTokenType.Number, NumberBuilder.ToString());
     }
     private Result ReadNumberNoExponent(scoped ref ValueStringBuilder NumberBuilder, ReadOnlySpan<char> BaseDigits, bool HasBaseSpecifier) {
-        // Read sign
-        ReadAny('-', '+');
-
         // Leading underscore
         if (!HasBaseSpecifier && Peek() is '_') {
             return new Error("Leading `_` in number");

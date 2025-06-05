@@ -19,29 +19,49 @@ public static class JsonhNumberParser {
     /// </summary>
     /// <param name="Decimals">Number of decimal places to use when a fractional exponent is given.</param>
     public static Result<BigReal> Parse(string JsonhNumber, int Decimals = 15) {
+        // Remove underscores
+        JsonhNumber = JsonhNumber.Replace("_", "");
+        ReadOnlySpan<char> Digits = JsonhNumber.AsSpan();
+
+        // Get sign
+        int Sign = 1;
+        if (Digits.StartsWith("-")) {
+            Sign = -1;
+            Digits = Digits[1..];
+        }
+        else if (Digits.StartsWith("+")) {
+            Sign = 1;
+            Digits = Digits[1..];
+        }
+
         // Decimal
         string BaseDigits = "0123456789";
         // Hexadecimal
-        if (JsonhNumber.StartsWith("0x", StringComparison.OrdinalIgnoreCase)) {
+        if (Digits.StartsWith("0x", StringComparison.OrdinalIgnoreCase)) {
             BaseDigits = "0123456789abcdef";
-            JsonhNumber = JsonhNumber[2..];
+            Digits = Digits[2..];
         }
         // Binary
-        else if (JsonhNumber.StartsWith("0b", StringComparison.OrdinalIgnoreCase)) {
+        else if (Digits.StartsWith("0b", StringComparison.OrdinalIgnoreCase)) {
             BaseDigits = "01";
-            JsonhNumber = JsonhNumber[2..];
+            Digits = Digits[2..];
         }
         // Octal
-        else if (JsonhNumber.StartsWith("0o", StringComparison.OrdinalIgnoreCase)) {
+        else if (Digits.StartsWith("0o", StringComparison.OrdinalIgnoreCase)) {
             BaseDigits = "01234567";
-            JsonhNumber = JsonhNumber[2..];
+            Digits = Digits[2..];
         }
 
-        // Remove underscores
-        JsonhNumber = JsonhNumber.Replace("_", "");
-
         // Parse number with base digits
-        return ParseFractionalNumberWithExponent(JsonhNumber, BaseDigits, Decimals);
+        if (ParseFractionalNumberWithExponent(Digits, BaseDigits, Decimals).TryGetError(out Error NumberError, out BigReal Number)) {
+            return NumberError;
+        }
+
+        // Apply sign
+        if (Sign != 1) {
+            Number *= Sign;
+        }
+        return Number;
     }
 
     /// <summary>
