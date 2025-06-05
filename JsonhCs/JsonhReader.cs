@@ -997,12 +997,12 @@ public sealed partial class JsonhReader : IDisposable {
                 Read();
                 NumberBuilder.Append(Next);
             }
-            // Decimal point
+            // Dot
             else if (Next is '.') {
                 Read();
                 NumberBuilder.Append(Next);
 
-                // Duplicate decimal point
+                // Duplicate dot
                 if (IsFraction) {
                     return new Error("Duplicate `.` in number");
                 }
@@ -1022,6 +1022,11 @@ public sealed partial class JsonhReader : IDisposable {
         // Ensure not empty
         if (NumberBuilder.AsSpan().IsEmpty) {
             return new Error("Empty number");
+        }
+
+        // Ensure at least one digit
+        if (!NumberBuilder.AsSpan().ContainsAnyExcept(['.', '-', '+', '_'])) {
+            return new Error("Number must have at least one digit");
         }
 
         // Trailing underscore

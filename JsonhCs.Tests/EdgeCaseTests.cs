@@ -131,4 +131,20 @@ public class EdgeCaseTests {
 
         JsonhReader.ParseElement(Jsonh).Value.Deserialize<int>(JsonhReader.MiniJson).ShouldBe(-0x5);
     }
+    [Fact]
+    public void NumberDot() {
+        string Jsonh = """
+            .
+            """;
+
+        JsonhReader.ParseElement(Jsonh).Value.ValueKind.ShouldBe(JsonValueKind.String);
+        JsonhReader.ParseElement(Jsonh).Value.Deserialize<string>(JsonhReader.MiniJson).ShouldBe(".");
+
+        string Jsonh2 = """
+            -.
+            """;
+
+        JsonhReader.ParseElement(Jsonh2).Value.ValueKind.ShouldBe(JsonValueKind.String);
+        JsonhReader.ParseElement(Jsonh2).Value.Deserialize<string>(JsonhReader.MiniJson).ShouldBe("-.");
+    }
 }
