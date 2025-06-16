@@ -1289,35 +1289,3 @@ public sealed partial class JsonhReader : IDisposable {
         return Next;
     }
 }
-
-/// <summary>
-/// Options for a <see cref="JsonhReader"/>.
-/// </summary>
-public record struct JsonhReaderOptions() {
-    /// <summary>
-    /// Enables/disables parsing unclosed inputs.
-    /// <code>
-    /// {
-    ///   "key": "val
-    /// </code>
-    /// </summary>
-    /// <remarks>
-    /// This is potentially useful for large language models that stream responses.<br/>
-    /// Only some tokens can be incomplete in this mode, so it should not be relied upon.
-    /// </remarks>
-    public bool IncompleteInputs { get; set; } = false;
-}
-
-/// <summary>
-/// A single JSONH token.
-/// </summary>
-public readonly record struct JsonhToken(JsonTokenType JsonType, string Value = "") {
-    /// <summary>
-    /// The type of the token.
-    /// </summary>
-    public JsonTokenType JsonType { get; } = JsonType;
-    /// <summary>
-    /// The value of the token, or an empty string.
-    /// </summary>
-    public string Value { get; } = Value;
-}
