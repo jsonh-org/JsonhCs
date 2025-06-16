@@ -5,6 +5,10 @@ namespace JsonhCs;
 /// </summary>
 public record struct JsonhReaderOptions() {
     /// <summary>
+    /// Specifies the major version of the JSONH specification to use.
+    /// </summary>
+    public JsonhVersion Version { get; set; } = JsonhVersion.Latest;
+    /// <summary>
     /// Enables/disables parsing unclosed inputs.
     /// <code>
     /// {
