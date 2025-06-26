@@ -8,7 +8,7 @@ namespace JsonhCs;
 /// Methods for parsing JSONH numbers.
 /// </summary>
 /// <remarks>
-/// Unlike <see cref="JsonhReader.ReadElement()"/>, minimal validation is done here.
+/// Unlike <see cref="JsonhReader.ReadElement()"/>, minimal validation is done here. Ensure the input is valid.
 /// </remarks>
 public static class JsonhNumberParser {
     /// <summary>
