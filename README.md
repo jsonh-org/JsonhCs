@@ -54,3 +54,27 @@ string Jsonh = """
     """;
 string Element = JsonhCs.JsonhReader.ParseElement<string>(Jsonh).Value!;
 ```
+
+### Source Generation
+
+If using NativeAOT, you will need to use the `JsonNode` APIs:
+
+```cs
+public class Player {
+    public required string Name { get; set; }
+    public required int Health { get; set; }
+}
+
+[JsonSourceGenerationOptions]
+[JsonSerializable(typeof(Player))]
+internal partial class PlayerContext : JsonSerializerContext {
+}
+```
+```cs
+string PlayerJsonh = """
+    Name: John Doe
+    Health: 9_999_999
+    """;
+Player PlayerObject = JsonhCs.JsonhReader.ParseNode(PlayerJsonh).Value
+    .Deserialize(PlayerContext.Default.Player)!;
+```
