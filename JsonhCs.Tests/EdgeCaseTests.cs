@@ -132,7 +132,7 @@ public class EdgeCaseTests {
         JsonhReader.ParseElement(Jsonh).Value.Deserialize<int>(JsonhReader.MiniJson).ShouldBe(-0x5);
     }
     [Fact]
-    public void NumberDot() {
+    public void NumberDotTest() {
         string Jsonh = """
             .
             """;
