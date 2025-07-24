@@ -147,4 +147,19 @@ public class EdgeCaseTests {
         JsonhReader.ParseElement(Jsonh2).Value.ValueKind.ShouldBe(JsonValueKind.String);
         JsonhReader.ParseElement(Jsonh2).Value.Deserialize<string>(JsonhReader.MiniJson).ShouldBe("-.");
     }
+    [Fact]
+    public void DuplicatePropertyNameTest() {
+        string Jsonh = """
+            {
+              a: 1,
+              c: 2,
+              a: 3,
+            }
+            """;
+
+        JsonhReader.ParseElement(Jsonh).Value.Deserialize<Dictionary<string, int>>(JsonhReader.MiniJson).ShouldBe(new() {
+            ["a"] = 3,
+            ["c"] = 2,
+        });
+    }
 }

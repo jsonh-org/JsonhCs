@@ -170,7 +170,7 @@ public sealed partial class JsonhReader : IDisposable {
             }
             // Object property
             else {
-                CurrentNode.AsObject().Add(CurrentPropertyName, Node);
+                CurrentNode.AsObject()[CurrentPropertyName] = Node;
                 CurrentPropertyName = null;
                 return false;
             }
