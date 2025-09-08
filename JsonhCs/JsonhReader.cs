@@ -878,7 +878,7 @@ public sealed partial class JsonhReader : IDisposable {
         using ValueStringBuilder WhitespaceBuilder = new();
 
         while (true) {
-            // Read char
+            // Peek char
             if (Peek() is not char Next) {
                 break;
             }
