@@ -1166,7 +1166,7 @@ public sealed partial class JsonhReader : IDisposable {
             char? Next = Read();
 
             // Hex digit
-            if (Next is (>= '0' and <= '9') or (>= 'A' and <= 'F') or (>= 'a' and <= 'f')) {
+            if (Next is not null && (Next is (>= '0' and <= '9') or (>= 'A' and <= 'F') or (>= 'a' and <= 'f'))) {
                 HexChars[Index] = Next.Value;
             }
             // Unexpected char
