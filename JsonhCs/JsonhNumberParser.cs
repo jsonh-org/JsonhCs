@@ -88,7 +88,7 @@ public static class JsonhNumberParser {
             ExponentIndex = Digits.IndexOfAny('e', 'E');
         }
         
-        // If no exponent then normalize real
+        // If no exponent then parse real
         if (ExponentIndex < 0) {
             return ParseFractionalNumber(Digits, BaseDigits);
         }
@@ -124,7 +124,7 @@ public static class JsonhNumberParser {
 
         // Find dot
         int DotIndex = Digits.IndexOf('.');
-        // If no dot then normalize integer
+        // If no dot then parse integer
         if (DotIndex < 0) {
             return ParseWholeNumber(Digits, BaseDigits).Try(BigInteger => (BigReal)BigInteger);
         }
