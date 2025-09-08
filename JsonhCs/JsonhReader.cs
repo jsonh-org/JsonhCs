@@ -985,6 +985,7 @@ public sealed partial class JsonhReader : IDisposable {
         }
 
         bool IsFraction = false;
+        bool IsEmpty = true;
 
         while (true) {
             // Peek char
@@ -996,11 +997,13 @@ public sealed partial class JsonhReader : IDisposable {
             if (BaseDigits.Contains(char.ToLowerInvariant(Next))) {
                 Read();
                 NumberBuilder.Append(Next);
+                IsEmpty = false;
             }
             // Dot
             else if (Next is '.') {
                 Read();
                 NumberBuilder.Append(Next);
+                IsEmpty = false;
 
                 // Duplicate dot
                 if (IsFraction) {
@@ -1012,6 +1015,7 @@ public sealed partial class JsonhReader : IDisposable {
             else if (Next is '_') {
                 Read();
                 NumberBuilder.Append(Next);
+                IsEmpty = false;
             }
             // Other
             else {
@@ -1020,7 +1024,7 @@ public sealed partial class JsonhReader : IDisposable {
         }
 
         // Ensure not empty
-        if (NumberBuilder.AsSpan().IsEmpty) {
+        if (IsEmpty) {
             return new Error("Empty number");
         }
 

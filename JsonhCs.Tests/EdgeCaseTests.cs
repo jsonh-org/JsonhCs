@@ -162,4 +162,13 @@ public class EdgeCaseTests {
             ["c"] = 2,
         });
     }
+    [Fact]
+    public void EmptyNumberTest() {
+        string Jsonh = """
+            0e
+            """;
+
+        JsonhReader.ParseElement(Jsonh).Value.ValueKind.ShouldBe(JsonValueKind.String);
+        JsonhReader.ParseElement(Jsonh).Value.Deserialize<string>(JsonhReader.MiniJson).ShouldBe("0e");
+    }
 }
