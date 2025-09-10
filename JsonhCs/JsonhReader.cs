@@ -987,6 +987,11 @@ public sealed partial class JsonhReader : IDisposable {
         bool IsFraction = false;
         bool IsEmpty = true;
 
+        // Leading zero (not base specifier)
+        if (!HasBaseSpecifier && NumberBuilder.Length >= 1 && NumberBuilder[^1] is '0') {
+            IsEmpty = false;
+        }
+
         while (true) {
             // Peek char
             if (Peek() is not char Next) {

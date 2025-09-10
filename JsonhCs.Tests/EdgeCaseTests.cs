@@ -171,4 +171,13 @@ public class EdgeCaseTests {
         JsonhReader.ParseElement(Jsonh).Value.ValueKind.ShouldBe(JsonValueKind.String);
         JsonhReader.ParseElement(Jsonh).Value.Deserialize<string>(JsonhReader.MiniJson).ShouldBe("0e");
     }
+    [Fact]
+    public void ZeroExponentTest() {
+        string Jsonh = """
+            0e4
+            """;
+
+        JsonhReader.ParseElement(Jsonh).Value.ValueKind.ShouldBe(JsonValueKind.Number);
+        JsonhReader.ParseElement(Jsonh).Value.Deserialize<double>(JsonhReader.MiniJson).ShouldBe(0e4);
+    }
 }
