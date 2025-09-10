@@ -172,12 +172,26 @@ public class EdgeCaseTests {
         JsonhReader.ParseElement(Jsonh).Value.Deserialize<string>(JsonhReader.MiniJson).ShouldBe("0e");
     }
     [Fact]
-    public void ZeroExponentTest() {
+    public void LeadingZeroWithExponentTest() {
         string Jsonh = """
-            0e4
+            [0e4, 0xe, 0xEe+2]
             """;
 
-        JsonhReader.ParseElement(Jsonh).Value.ValueKind.ShouldBe(JsonValueKind.Number);
-        JsonhReader.ParseElement(Jsonh).Value.Deserialize<double>(JsonhReader.MiniJson).ShouldBe(0e4);
+        JsonhReader.ParseElement(Jsonh).Value.ValueKind.ShouldBe(JsonValueKind.Array);
+        JsonhReader.ParseElement(Jsonh).Value.Deserialize<double[]>(JsonhReader.MiniJson).ShouldBe([0e4, 0xe, 1400]);
+
+        string Jsonh2 = """
+            [e+2, 0xe+2, 0oe+2, 0be+2]
+            """;
+
+        JsonhReader.ParseElement(Jsonh2).Value.ValueKind.ShouldBe(JsonValueKind.Array);
+        JsonhReader.ParseElement(Jsonh2).Value.Deserialize<string[]>(JsonhReader.MiniJson).ShouldBe(["e+2", "0xe+2", "0oe+2", "0be+2"]);
+
+        string Jsonh3 = """
+            [0x0e+, 0b0e+_1]
+            """;
+
+        JsonhReader.ParseElement(Jsonh3).Value.ValueKind.ShouldBe(JsonValueKind.Array);
+        JsonhReader.ParseElement(Jsonh3).Value.Deserialize<string[]>(JsonhReader.MiniJson).ShouldBe(["0x0e+", "0b0e+_1"]);
     }
 }

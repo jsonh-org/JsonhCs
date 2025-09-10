@@ -919,40 +919,51 @@ public sealed partial class JsonhReader : IDisposable {
         // Read base
         string BaseDigits = "0123456789";
         bool HasBaseSpecifier = false;
+        bool HasLeadingZero = false;
         if (ReadOne('0')) {
             NumberBuilder.Append('0');
+            HasLeadingZero = true;
 
             if (ReadAny('x', 'X') is char HexBaseChar) {
                 NumberBuilder.Append(HexBaseChar);
                 BaseDigits = "0123456789abcdef";
                 HasBaseSpecifier = true;
+                HasLeadingZero = false;
             }
             else if (ReadAny('b', 'B') is char BinaryBaseChar) {
                 NumberBuilder.Append(BinaryBaseChar);
                 BaseDigits = "01";
                 HasBaseSpecifier = true;
+                HasLeadingZero = false;
             }
             else if (ReadAny('o', 'O') is char OctalBaseChar) {
                 NumberBuilder.Append(OctalBaseChar);
                 BaseDigits = "01234567";
                 HasBaseSpecifier = true;
+                HasLeadingZero = false;
             }
         }
 
         // Read main number
-        if (ReadNumberNoExponent(ref NumberBuilder, BaseDigits, HasBaseSpecifier).TryGetError(out Error MainError)) {
+        if (ReadNumberNoExponent(ref NumberBuilder, BaseDigits, HasBaseSpecifier, HasLeadingZero).TryGetError(out Error MainError)) {
             PartialCharsRead = NumberBuilder.ToString();
             return MainError;
         }
 
-        // Hexadecimal exponent
+        // Possible hexadecimal exponent
         if (NumberBuilder[^1] is 'e' or 'E') {
-            // Read sign
+            // Read sign (mandatory)
             if (ReadAny('+', '-') is char ExponentSign) {
                 NumberBuilder.Append(ExponentSign);
 
+                // Missing digit between base specifier and exponent (e.g. `0xe+`)
+                if (HasBaseSpecifier && NumberBuilder.Length == 4) {
+                    PartialCharsRead = NumberBuilder.ToString();
+                    return new Error("Missing digit between base specifier and exponent");
+                }
+
                 // Read exponent number
-                if (ReadNumberNoExponent(ref NumberBuilder, BaseDigits, HasBaseSpecifier).TryGetError(out Error ExponentError)) {
+                if (ReadNumberNoExponent(ref NumberBuilder, BaseDigits).TryGetError(out Error ExponentError)) {
                     PartialCharsRead = NumberBuilder.ToString();
                     return ExponentError;
                 }
@@ -968,7 +979,7 @@ public sealed partial class JsonhReader : IDisposable {
             }
 
             // Read exponent number
-            if (ReadNumberNoExponent(ref NumberBuilder, BaseDigits, HasBaseSpecifier).TryGetError(out Error ExponentError)) {
+            if (ReadNumberNoExponent(ref NumberBuilder, BaseDigits).TryGetError(out Error ExponentError)) {
                 PartialCharsRead = NumberBuilder.ToString();
                 return ExponentError;
             }
@@ -978,7 +989,7 @@ public sealed partial class JsonhReader : IDisposable {
         PartialCharsRead = default;
         return new JsonhToken(JsonTokenType.Number, NumberBuilder.ToString());
     }
-    private Result ReadNumberNoExponent(scoped ref ValueStringBuilder NumberBuilder, ReadOnlySpan<char> BaseDigits, bool HasBaseSpecifier) {
+    private Result ReadNumberNoExponent(scoped ref ValueStringBuilder NumberBuilder, ReadOnlySpan<char> BaseDigits, bool HasBaseSpecifier = false, bool HasLeadingZero = false) {
         // Leading underscore
         if (!HasBaseSpecifier && Peek() is '_') {
             return new Error("Leading `_` in number");
@@ -988,7 +999,7 @@ public sealed partial class JsonhReader : IDisposable {
         bool IsEmpty = true;
 
         // Leading zero (not base specifier)
-        if (!HasBaseSpecifier && NumberBuilder.Length >= 1 && NumberBuilder[^1] is '0') {
+        if (HasLeadingZero) {
             IsEmpty = false;
         }
 
