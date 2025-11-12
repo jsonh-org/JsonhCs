@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <VersionPrefix>3.15</VersionPrefix>
+    <VersionPrefix>3.16</VersionPrefix>
     <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <LangVersion>latest</LangVersion>
     <RootNamespace>JsonhCs</RootNamespace>
