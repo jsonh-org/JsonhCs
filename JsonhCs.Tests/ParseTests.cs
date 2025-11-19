@@ -80,4 +80,36 @@ public class ParseTests {
 
         Element.ShouldBe([1, 2, 3, 4]);
     }
+    [Fact]
+    public void VerbatimStringTest() {
+        string Jsonh = """
+            {
+                a\\: b\\
+                @c\\: @d\\
+                @e\\: f\\
+            }
+            """;
+        JsonElement Element = JsonhReader.ParseElement(Jsonh).Value;
+
+        Element.GetPropertyCount().ShouldBe(3);
+        Element.GetProperty("a\\").Deserialize<string>(JsonhReader.MiniJson).ShouldBe("b\\");
+        Element.GetProperty("c\\\\").Deserialize<string>(JsonhReader.MiniJson).ShouldBe("d\\\\");
+        Element.GetProperty("e\\\\").Deserialize<string>(JsonhReader.MiniJson).ShouldBe("f\\");
+
+        JsonElement Element2 = JsonhReader.ParseElement(Jsonh, new JsonhReaderOptions() {
+            Version = JsonhVersion.V1,
+        }).Value;
+        Element2.GetPropertyCount().ShouldBe(3);
+        Element2.GetProperty("a\\").Deserialize<string>(JsonhReader.MiniJson).ShouldBe("b\\");
+        Element2.GetProperty("@c\\").Deserialize<string>(JsonhReader.MiniJson).ShouldBe("@d\\");
+        Element2.GetProperty("@e\\").Deserialize<string>(JsonhReader.MiniJson).ShouldBe("f\\");
+
+        string Jsonh2 = """
+            @"a\\": @'''b\\'''
+            """;
+        JsonElement Element3 = JsonhReader.ParseElement(Jsonh2).Value;
+
+        Element3.GetPropertyCount().ShouldBe(1);
+        Element3.GetProperty("a\\\\").Deserialize<string>(JsonhReader.MiniJson).ShouldBe("b\\\\");
+    }
 }

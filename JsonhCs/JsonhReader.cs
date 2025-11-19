@@ -30,7 +30,15 @@ public sealed partial class JsonhReader : IDisposable {
     /// <summary>
     /// Characters that cannot be used unescaped in quoteless strings.
     /// </summary>
-    private static readonly SearchValues<char> ReservedChars = SearchValues.Create(['\\', ',', ':', '[', ']', '{', '}', '/', '#', '"', '\'']);
+    private SearchValues<char> ReservedChars => Options.SupportsVersion(JsonhVersion.V2) ? ReservedCharsV2 : ReservedCharsV1;
+    /// <summary>
+    /// Characters that cannot be used unescaped in quoteless strings in JSONH V1.
+    /// </summary>
+    private static readonly SearchValues<char> ReservedCharsV1 = SearchValues.Create(['\\', ',', ':', '[', ']', '{', '}', '/', '#', '"', '\'']);
+    /// <summary>
+    /// Characters that cannot be used unescaped in quoteless strings in JSONH V2.
+    /// </summary>
+    private static readonly SearchValues<char> ReservedCharsV2 = SearchValues.Create(['\\', ',', ':', '[', ']', '{', '}', '/', '#', '"', '\'', '@']);
     /// <summary>
     /// Characters that are considered newlines.
     /// </summary>
@@ -646,9 +654,21 @@ public sealed partial class JsonhReader : IDisposable {
         ReadOne(',');
     }
     private Result<JsonhToken> ReadString() {
+        // Verbatim
+        bool IsVerbatim = false;
+        if (Options.SupportsVersion(JsonhVersion.V2) && ReadOne('@')) {
+            IsVerbatim = true;
+
+            // Ensure string immediately follows verbatim symbol
+            char? Next = Peek();
+            if (Next is null || Next is '#' or '/' || char.IsWhiteSpace(Next.Value)) {
+                return new Error("Expected string to immediately follow verbatim symbol");
+            }
+        }
+
         // Start quote
         if (ReadAny('"', '\'') is not char StartQuote) {
-            return ReadQuotelessString();
+            return ReadQuotelessString(IsVerbatim: IsVerbatim);
         }
 
         // Count multiple start quotes
@@ -690,8 +710,13 @@ public sealed partial class JsonhReader : IDisposable {
             }
             // Escape sequence
             else if (Next is '\\') {
-                if (ReadEscapeSequence(ref StringBuilder).TryGetError(out Error EscapeSequenceError)) {
-                    return EscapeSequenceError;
+                if (IsVerbatim) {
+                    StringBuilder.Append(Next);
+                }
+                else {
+                    if (ReadEscapeSequence(ref StringBuilder).TryGetError(out Error EscapeSequenceError)) {
+                        return EscapeSequenceError;
+                    }
                 }
             }
             // Literal character
@@ -812,7 +837,7 @@ public sealed partial class JsonhReader : IDisposable {
         // End of string
         return new JsonhToken(JsonTokenType.String, StringBuilder.ToString());
     }
-    private Result<JsonhToken> ReadQuotelessString(ReadOnlySpan<char> InitialChars = default) {
+    private Result<JsonhToken> ReadQuotelessString(ReadOnlySpan<char> InitialChars = default, bool IsVerbatim = false) {
         bool IsNamedLiteralPossible = true;
 
         // Read quoteless string
@@ -829,8 +854,13 @@ public sealed partial class JsonhReader : IDisposable {
             // Escape sequence
             if (Next is '\\') {
                 Read();
-                if (ReadEscapeSequence(ref StringBuilder).TryGetError(out Error EscapeSequenceError)) {
-                    return EscapeSequenceError;
+                if (IsVerbatim) {
+                    StringBuilder.Append(Next);
+                }
+                else {
+                    if (ReadEscapeSequence(ref StringBuilder).TryGetError(out Error EscapeSequenceError)) {
+                        return EscapeSequenceError;
+                    }
                 }
                 IsNamedLiteralPossible = false;
             }
@@ -1085,7 +1115,7 @@ public sealed partial class JsonhReader : IDisposable {
             return ReadNumberOrQuotelessString();
         }
         // String
-        else if (Next is '"' or '\'') {
+        else if (Next is '"' or '\'' || (Options.SupportsVersion(JsonhVersion.V2) && Next is '@')) {
             return ReadString();
         }
         // Quoteless string (or named literal)

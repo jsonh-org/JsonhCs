@@ -23,7 +23,7 @@ public class ReadTests {
         Tokens[3].Value.JsonType.ShouldBe(JsonTokenType.EndObject);
     }
     [Fact]
-    public void NestableBlockComments() {
+    public void NestableBlockCommentTest() {
         string Jsonh = """
             /* */
             /=* *=/
