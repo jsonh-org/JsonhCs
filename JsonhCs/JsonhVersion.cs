@@ -12,4 +12,5 @@ public enum JsonhVersion {
     /// Version 1 of the specification, released 2025/03/19.
     /// </summary>
     V1 = 1,
+    V2 = 2,
 }

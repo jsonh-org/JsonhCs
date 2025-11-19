@@ -20,4 +20,16 @@ public record struct JsonhReaderOptions() {
     /// Only some tokens can be incomplete in this mode, so it should not be relied upon.
     /// </remarks>
     public bool IncompleteInputs { get; set; } = false;
+
+    /// <summary>
+    /// Returns whether <see cref="Version"/> is greater than or equal to <paramref name="MinimumVersion"/>.
+    /// </summary>
+    public readonly bool SupportsVersion(JsonhVersion MinimumVersion) {
+        const JsonhVersion LatestVersion = JsonhVersion.V2;
+
+        JsonhVersion OptionsVersion = Version is JsonhVersion.Latest ? LatestVersion : Version;
+        JsonhVersion GivenVersion = MinimumVersion is JsonhVersion.Latest ? LatestVersion : MinimumVersion;
+
+        return OptionsVersion >= GivenVersion;
+    }
 }

@@ -1110,6 +1110,7 @@ public sealed partial class JsonhReader : IDisposable {
     }
     private Result<JsonhToken> ReadComment() {
         bool BlockComment = false;
+        int StartNestCounter = 0;
 
         // Hash-style comment
         if (ReadOne('#')) {
@@ -1121,6 +1122,16 @@ public sealed partial class JsonhReader : IDisposable {
             // Block-style comment
             else if (ReadOne('*')) {
                 BlockComment = true;
+            }
+            // Nestable block-style comment
+            else if (Options.SupportsVersion(JsonhVersion.V2) && Peek() is '=') {
+                BlockComment = true;
+                while (ReadOne('=')) {
+                    StartNestCounter++;
+                }
+                if (!ReadOne('*')) {
+                    return new Error("Expected `*` after start of nesting block comment");
+                }
             }
             else {
                 return new Error("Unexpected `/`");
@@ -1142,9 +1153,30 @@ public sealed partial class JsonhReader : IDisposable {
                 if (Next is null) {
                     return new Error("Expected end of block comment, got end of input");
                 }
+
                 // End of block comment
-                if (Next is '*' && ReadOne('/')) {
-                    return new JsonhToken(JsonTokenType.Comment, CommentBuilder.ToString());
+                if (Next is '*') {
+                    // End of nestable block comment
+                    if (Options.SupportsVersion(JsonhVersion.V2)) {
+                        // Count nests
+                        int EndNestCounter = 0;
+                        while (EndNestCounter < StartNestCounter && ReadOne('=')) {
+                            EndNestCounter++;
+                        }
+                        // Partial end nestable block comment was actually part of comment
+                        if (EndNestCounter < StartNestCounter || Peek() is not '/') {
+                            CommentBuilder.Append('*');
+                            for (; EndNestCounter > 0; EndNestCounter--) {
+                                CommentBuilder.Append('=');
+                            }
+                            continue;
+                        }
+                    }
+
+                    // End of block comment
+                    if (ReadOne('/')) {
+                        return new JsonhToken(JsonTokenType.Comment, CommentBuilder.ToString());
+                    }
                 }
             }
             else {
