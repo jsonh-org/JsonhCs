@@ -6,11 +6,11 @@ public class EdgeCaseTests {
     [Fact]
     public void QuotelessStringStartingWithKeywordTest() {
         string Jsonh = """
-            [nulla, null b, null]
+            [nulla, null b, null, @null]
             """;
         string?[] Element = JsonhReader.ParseElement<string?[]>(Jsonh).Value!;
 
-        Element.ShouldBe(["nulla", "null b", null]);
+        Element.ShouldBe(["nulla", "null b", null, "null"]);
     }
     [Fact]
     public void BracelessObjectWithInvalidValueTest() {

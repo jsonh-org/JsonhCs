@@ -838,7 +838,7 @@ public sealed partial class JsonhReader : IDisposable {
         return new JsonhToken(JsonTokenType.String, StringBuilder.ToString());
     }
     private Result<JsonhToken> ReadQuotelessString(ReadOnlySpan<char> InitialChars = default, bool IsVerbatim = false) {
-        bool IsNamedLiteralPossible = true;
+        bool IsNamedLiteralPossible = !IsVerbatim;
 
         // Read quoteless string
         ValueStringBuilder StringBuilder = new(stackalloc char[64]);
