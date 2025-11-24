@@ -112,4 +112,18 @@ public class ParseTests {
         Element3.GetPropertyCount().ShouldBe(1);
         Element3.GetProperty("a\\\\").Deserialize<string>(JsonhReader.MiniJson).ShouldBe("b\\\\");
     }
+    [Fact]
+    public void ParseSingleElementTest() {
+        string Jsonh = """""
+            1
+            2
+            """"";
+        int Element = JsonhReader.ParseElement<int>(Jsonh).Value!;
+
+        Element.ShouldBe(1);
+
+        JsonhReader.ParseElement<int>(Jsonh, new JsonhReaderOptions() {
+            ParseSingleElement = true,
+        }).IsError.ShouldBeTrue();
+    }
 }

@@ -187,99 +187,110 @@ public sealed partial class JsonhReader : IDisposable {
             SubmitNode(Node);
             CurrentNode = Node;
         }
+        Result<JsonNode?> ParseNextNode() {
+            foreach (Result<JsonhToken> TokenResult in ReadElement()) {
+                // Check error
+                if (!TokenResult.TryGetValue(out JsonhToken Token, out Error Error)) {
+                    return Error;
+                }
 
-        foreach (Result<JsonhToken> TokenResult in ReadElement()) {
-            // Check error
-            if (!TokenResult.TryGetValue(out JsonhToken Token, out Error Error)) {
-                return Error;
+                switch (Token.JsonType) {
+                    // Null
+                    case JsonTokenType.Null: {
+                        JsonValue? Node = null;
+                        if (SubmitNode(Node)) {
+                            return Node;
+                        }
+                        break;
+                    }
+                    // True
+                    case JsonTokenType.True: {
+                        JsonValue Node = JsonValue.Create(true);
+                        if (SubmitNode(Node)) {
+                            return Node;
+                        }
+                        break;
+                    }
+                    // False
+                    case JsonTokenType.False: {
+                        JsonValue Node = JsonValue.Create(false);
+                        if (SubmitNode(Node)) {
+                            return Node;
+                        }
+                        break;
+                    }
+                    // String
+                    case JsonTokenType.String: {
+                        JsonValue Node = JsonValue.Create(Token.Value);
+                        if (SubmitNode(Node)) {
+                            return Node;
+                        }
+                        break;
+                    }
+                    // Number
+                    case JsonTokenType.Number: {
+                        if (JsonhNumberParser.Parse(Token.Value).TryGetError(out Error NumberError, out BigReal Number)) {
+                            return NumberError;
+                        }
+                        JsonNode Node = JsonNode.Parse(Number.ToString())!;
+                        if (SubmitNode(Node)) {
+                            return Node;
+                        }
+                        break;
+                    }
+                    // Start Object
+                    case JsonTokenType.StartObject: {
+                        JsonObject Node = [];
+                        StartNode(Node);
+                        break;
+                    }
+                    // Start Array
+                    case JsonTokenType.StartArray: {
+                        JsonArray Node = [];
+                        StartNode(Node);
+                        break;
+                    }
+                    // End Object/Array
+                    case JsonTokenType.EndObject or JsonTokenType.EndArray: {
+                        // Nested node
+                        if (CurrentNode?.Parent is not null) {
+                            CurrentNode = CurrentNode.Parent;
+                        }
+                        // Root node
+                        else {
+                            return CurrentNode;
+                        }
+                        break;
+                    }
+                    // Property Name
+                    case JsonTokenType.PropertyName: {
+                        CurrentPropertyName = Token.Value;
+                        break;
+                    }
+                    // Comment
+                    case JsonTokenType.Comment: {
+                        break;
+                    }
+                    // Not implemented
+                    default: {
+                        throw new NotImplementedException(Token.JsonType.ToString());
+                    }
+                }
             }
 
-            switch (Token.JsonType) {
-                // Null
-                case JsonTokenType.Null: {
-                    JsonValue? Node = null;
-                    if (SubmitNode(Node)) {
-                        return Node;
-                    }
-                    break;
-                }
-                // True
-                case JsonTokenType.True: {
-                    JsonValue Node = JsonValue.Create(true);
-                    if (SubmitNode(Node)) {
-                        return Node;
-                    }
-                    break;
-                }
-                // False
-                case JsonTokenType.False: {
-                    JsonValue Node = JsonValue.Create(false);
-                    if (SubmitNode(Node)) {
-                        return Node;
-                    }
-                    break;
-                }
-                // String
-                case JsonTokenType.String: {
-                    JsonValue Node = JsonValue.Create(Token.Value);
-                    if (SubmitNode(Node)) {
-                        return Node;
-                    }
-                    break;
-                }
-                // Number
-                case JsonTokenType.Number: {
-                    if (JsonhNumberParser.Parse(Token.Value).TryGetError(out Error NumberError, out BigReal Number)) {
-                        return NumberError;
-                    }
-                    JsonNode Node = JsonNode.Parse(Number.ToString())!;
-                    if (SubmitNode(Node)) {
-                        return Node;
-                    }
-                    break;
-                }
-                // Start Object
-                case JsonTokenType.StartObject: {
-                    JsonObject Node = [];
-                    StartNode(Node);
-                    break;
-                }
-                // Start Array
-                case JsonTokenType.StartArray: {
-                    JsonArray Node = [];
-                    StartNode(Node);
-                    break;
-                }
-                // End Object/Array
-                case JsonTokenType.EndObject or JsonTokenType.EndArray: {
-                    // Nested node
-                    if (CurrentNode?.Parent is not null) {
-                        CurrentNode = CurrentNode.Parent;
-                    }
-                    // Root node
-                    else {
-                        return CurrentNode;
-                    }
-                    break;
-                }
-                // Property Name
-                case JsonTokenType.PropertyName: {
-                    CurrentPropertyName = Token.Value;
-                    break;
-                }
-                // Comment
-                case JsonTokenType.Comment: {
-                    break;
-                }
-                // Not implemented
-                default: {
-                    throw new NotImplementedException(Token.JsonType.ToString());
-                }
-            }
+            // End of input
+            return new Error("Expected token, got end of input");
         }
 
-        // End of input
-        return new Error("Expected token, got end of input");
+        // Parse next node
+        Result<JsonNode?> NextNode = ParseNextNode();
+
+        // Ensure exactly one element
+        if (Options.ParseSingleElement && HasElement()) {
+            return new Error("Expected single element");
+        }
+
+        return NextNode;
     }
     /// <summary>
     /// Tries to find the given property name in the reader.<br/>
@@ -328,6 +339,13 @@ public sealed partial class JsonhReader : IDisposable {
 
         // Path not found
         return false;
+    }
+    /// <summary>
+    /// Reads comments and whitespace and returns whether the reader contains another element.
+    /// </summary>
+    public bool HasElement() {
+        ReadCommentsAndWhitespace();
+        return Peek() is not null;
     }
     /// <summary>
     /// Reads a single element from the reader.
