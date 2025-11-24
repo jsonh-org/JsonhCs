@@ -57,10 +57,10 @@ public class ParseTests {
     }
     [Fact]
     public void BracelessObjectTest() {
-        string Jsonh = """""
+        string Jsonh = """
             a: b
             c: d
-            """"";
+            """;
         JsonElement Element = JsonhReader.ParseElement(Jsonh).Value;
 
         Element.GetPropertyCount().ShouldBe(2);
@@ -69,13 +69,13 @@ public class ParseTests {
     }
     [Fact]
     public void CommentTest() {
-        string Jsonh = """""
+        string Jsonh = """
             [
                 1 # hash comment
                 2 // line comment
                 3 /* block comment */,4
             ]
-            """"";
+            """;
         int[] Element = JsonhReader.ParseElement<int[]>(Jsonh).Value!;
 
         Element.ShouldBe([1, 2, 3, 4]);
@@ -114,10 +114,10 @@ public class ParseTests {
     }
     [Fact]
     public void ParseSingleElementTest() {
-        string Jsonh = """""
+        string Jsonh = """
             1
             2
-            """"";
+            """;
         int Element = JsonhReader.ParseElement<int>(Jsonh).Value!;
 
         Element.ShouldBe(1);
