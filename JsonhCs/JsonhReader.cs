@@ -163,31 +163,31 @@ public sealed partial class JsonhReader : IDisposable {
     /// Parses a single <see cref="JsonNode"/> from the reader.
     /// </summary>
     public Result<JsonNode?> ParseNode() {
-        JsonNode? CurrentNode = null;
+        JsonNode? CurrentElement = null;
         string? CurrentPropertyName = null;
 
-        bool SubmitNode(JsonNode? Node) {
+        bool SubmitElement(JsonNode? Element) {
             // Root value
-            if (CurrentNode is null) {
+            if (CurrentElement is null) {
                 return true;
             }
             // Array item
             if (CurrentPropertyName is null) {
-                CurrentNode.AsArray().Add(Node);
+                CurrentElement.AsArray().Add(Element);
                 return false;
             }
             // Object property
             else {
-                CurrentNode.AsObject()[CurrentPropertyName] = Node;
+                CurrentElement.AsObject()[CurrentPropertyName] = Element;
                 CurrentPropertyName = null;
                 return false;
             }
         }
-        void StartNode(JsonNode Node) {
-            SubmitNode(Node);
-            CurrentNode = Node;
+        void StartElement(JsonNode Element) {
+            SubmitElement(Element);
+            CurrentElement = Element;
         }
-        Result<JsonNode?> ParseNextNode() {
+        Result<JsonNode?> ParseNextElement() {
             foreach (Result<JsonhToken> TokenResult in ReadElement()) {
                 // Check error
                 if (!TokenResult.TryGetValue(out JsonhToken Token, out Error Error)) {
@@ -197,33 +197,33 @@ public sealed partial class JsonhReader : IDisposable {
                 switch (Token.JsonType) {
                     // Null
                     case JsonTokenType.Null: {
-                        JsonValue? Node = null;
-                        if (SubmitNode(Node)) {
-                            return Node;
+                        JsonValue? Element = null;
+                        if (SubmitElement(Element)) {
+                            return Element;
                         }
                         break;
                     }
                     // True
                     case JsonTokenType.True: {
-                        JsonValue Node = JsonValue.Create(true);
-                        if (SubmitNode(Node)) {
-                            return Node;
+                        JsonValue Element = JsonValue.Create(true);
+                        if (SubmitElement(Element)) {
+                            return Element;
                         }
                         break;
                     }
                     // False
                     case JsonTokenType.False: {
-                        JsonValue Node = JsonValue.Create(false);
-                        if (SubmitNode(Node)) {
-                            return Node;
+                        JsonValue Element = JsonValue.Create(false);
+                        if (SubmitElement(Element)) {
+                            return Element;
                         }
                         break;
                     }
                     // String
                     case JsonTokenType.String: {
-                        JsonValue Node = JsonValue.Create(Token.Value);
-                        if (SubmitNode(Node)) {
-                            return Node;
+                        JsonValue Element = JsonValue.Create(Token.Value);
+                        if (SubmitElement(Element)) {
+                            return Element;
                         }
                         break;
                     }
@@ -232,33 +232,33 @@ public sealed partial class JsonhReader : IDisposable {
                         if (JsonhNumberParser.Parse(Token.Value).TryGetError(out Error NumberError, out BigReal Number)) {
                             return NumberError;
                         }
-                        JsonNode Node = JsonNode.Parse(Number.ToString())!;
-                        if (SubmitNode(Node)) {
-                            return Node;
+                        JsonNode Element = JsonNode.Parse(Number.ToString())!;
+                        if (SubmitElement(Element)) {
+                            return Element;
                         }
                         break;
                     }
                     // Start Object
                     case JsonTokenType.StartObject: {
-                        JsonObject Node = [];
-                        StartNode(Node);
+                        JsonObject Element = [];
+                        StartElement(Element);
                         break;
                     }
                     // Start Array
                     case JsonTokenType.StartArray: {
-                        JsonArray Node = [];
-                        StartNode(Node);
+                        JsonArray Element = [];
+                        StartElement(Element);
                         break;
                     }
                     // End Object/Array
                     case JsonTokenType.EndObject or JsonTokenType.EndArray: {
-                        // Nested node
-                        if (CurrentNode?.Parent is not null) {
-                            CurrentNode = CurrentNode.Parent;
+                        // Nested element
+                        if (CurrentElement?.Parent is not null) {
+                            CurrentElement = CurrentElement.Parent;
                         }
-                        // Root node
+                        // Root element
                         else {
-                            return CurrentNode;
+                            return CurrentElement;
                         }
                         break;
                     }
@@ -282,15 +282,15 @@ public sealed partial class JsonhReader : IDisposable {
             return new Error("Expected token, got end of input");
         }
 
-        // Parse next node
-        Result<JsonNode?> NextNode = ParseNextNode();
+        // Parse next element
+        Result<JsonNode?> NextElement = ParseNextElement();
 
         // Ensure exactly one element
         if (Options.ParseSingleElement && HasElement()) {
             return new Error("Expected single element");
         }
 
-        return NextNode;
+        return NextElement;
     }
     /// <summary>
     /// Tries to find the given property name in the reader.<br/>
