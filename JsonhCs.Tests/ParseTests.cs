@@ -125,5 +125,15 @@ public class ParseTests {
         JsonhReader.ParseElement<int>(Jsonh, new JsonhReaderOptions() {
             ParseSingleElement = true,
         }).IsError.ShouldBeTrue();
+
+        string Jsonh2 = """
+            1
+
+
+            """;
+
+        JsonhReader.ParseElement<int>(Jsonh2, new JsonhReaderOptions() {
+            ParseSingleElement = true,
+        }).IsError.ShouldBeFalse();
     }
 }

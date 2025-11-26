@@ -286,8 +286,12 @@ public sealed partial class JsonhReader : IDisposable {
         Result<JsonNode?> NextElement = ParseNextElement();
 
         // Ensure exactly one element
-        if (Options.ParseSingleElement && HasElement()) {
-            return new Error("Expected single element");
+        if (Options.ParseSingleElement) {
+            foreach (Result<JsonhToken> Token in ReadEndOfElements()) {
+                if (Token.IsError) {
+                    return Token.Error;
+                }
+            }
         }
 
         return NextElement;
@@ -341,11 +345,32 @@ public sealed partial class JsonhReader : IDisposable {
         return false;
     }
     /// <summary>
-    /// Reads comments and whitespace and returns whether the reader contains another element.
+    /// Reads whitespace and returns whether the reader contains another token.
     /// </summary>
-    public bool HasElement() {
-        ReadCommentsAndWhitespace();
+    public bool HasToken() {
+        // Whitespace
+        ReadWhitespace();
+
+        // Peek char
         return Peek() is not null;
+    }
+    /// <summary>
+    /// Reads comments and whitespace and errors if the reader contains another element.
+    /// </summary>
+    public IEnumerable<Result<JsonhToken>> ReadEndOfElements() {
+        // Comments & whitespace
+        foreach (Result<JsonhToken> Token in ReadCommentsAndWhitespace()) {
+            if (Token.IsError) {
+                yield return Token;
+                yield break;
+            }
+            yield return Token;
+        }
+
+        // Peek char
+        if (Peek() is not null) {
+            yield return new Error("Expected end of elements");
+        }
     }
     /// <summary>
     /// Reads a single element from the reader.
