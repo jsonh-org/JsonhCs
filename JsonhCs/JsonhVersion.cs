@@ -5,7 +5,7 @@ namespace JsonhCs;
 /// </summary>
 public enum JsonhVersion {
     /// <summary>
-    /// Indicates that the latest version should be used (currently <see cref="V1"/>).
+    /// Indicates that the latest version should be used (currently <see cref="V2"/>).
     /// </summary>
     Latest = 0,
     /// <summary>
