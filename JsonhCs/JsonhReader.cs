@@ -1173,7 +1173,12 @@ public sealed partial class JsonhReader : IDisposable {
 
             // Comment
             if (Peek() is '#' or '/') {
-                yield return ReadComment();
+                Result<JsonhToken> Comment = ReadComment();
+                if (Comment.IsError) {
+                    yield return Comment.Error;
+                    yield break;
+                }
+                yield return Comment;
             }
             // End of comments
             else {
