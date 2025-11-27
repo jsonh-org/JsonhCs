@@ -361,7 +361,7 @@ public sealed partial class JsonhReader : IDisposable {
         // Comments & whitespace
         foreach (Result<JsonhToken> Token in ReadCommentsAndWhitespace()) {
             if (Token.IsError) {
-                yield return Token;
+                yield return Token.Error;
                 yield break;
             }
             yield return Token;
