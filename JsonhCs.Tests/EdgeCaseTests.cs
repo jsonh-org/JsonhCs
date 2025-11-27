@@ -194,4 +194,12 @@ public class EdgeCaseTests {
         JsonhReader.ParseElement(Jsonh3).Value.ValueKind.ShouldBe(JsonValueKind.Array);
         JsonhReader.ParseElement(Jsonh3).Value.Deserialize<string[]>(JsonhReader.MiniJson).ShouldBe(["0x0e+", "0b0e+_1"]);
     }
+    [Fact]
+    public void ErrorInBracelessPropertyNameTest() {
+        string Jsonh = """
+            a /
+            """;
+
+        JsonhReader.ParseElement(Jsonh).IsError.ShouldBeTrue();
+    }
 }

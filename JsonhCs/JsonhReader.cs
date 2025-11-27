@@ -421,29 +421,12 @@ public sealed partial class JsonhReader : IDisposable {
 
             // Detect braceless object from property name
             if (Token.Value.JsonType is JsonTokenType.String) {
-                // Try read property name
-                List<JsonhToken> PropertyNameTokens = [];
-                foreach (Result<JsonhToken> PropertyNameToken in ReadPropertyName(Token.Value.Value)) {
-                    // Possible braceless object
-                    if (PropertyNameToken.TryGetValue(out JsonhToken Value)) {
-                        PropertyNameTokens.Add(Value);
-                    }
-                    // Primitive value (error reading property name)
-                    else {
-                        yield return Token.Value;
-                        foreach (Result<JsonhToken> NonPropertyNameToken in PropertyNameTokens) {
-                            yield return NonPropertyNameToken;
-                        }
+                foreach (Result<JsonhToken> Token2 in ReadBracelessObjectOrEndOfString(Token.Value)) {
+                    if (Token2.IsError) {
+                        yield return Token2.Error;
                         yield break;
                     }
-                }
-                // Braceless object
-                foreach (Result<JsonhToken> ObjectToken in ReadBracelessObject(PropertyNameTokens)) {
-                    if (ObjectToken.IsError) {
-                        yield return ObjectToken.Error;
-                        yield break;
-                    }
-                    yield return ObjectToken;
+                    yield return Token2;
                 }
             }
             // Primitive value
@@ -550,6 +533,41 @@ public sealed partial class JsonhReader : IDisposable {
             }
         }
     }
+    private IEnumerable<Result<JsonhToken>> ReadBracelessObjectOrEndOfString(JsonhToken StringToken) {
+        // Comments & whitespace
+        List<JsonhToken> PropertyNameTokens = [];
+        foreach (Result<JsonhToken> CommentOrWhitespaceToken in ReadCommentsAndWhitespace()) {
+            if (CommentOrWhitespaceToken.IsError) {
+                yield return CommentOrWhitespaceToken.Error;
+                yield break;
+            }
+            PropertyNameTokens.Add(CommentOrWhitespaceToken.Value);
+        }
+
+        // String
+        if (!ReadOne(':')) {
+            // String
+            yield return StringToken;
+            // Comments & whitespace
+            foreach (JsonhToken CommentOrWhitespaceToken in PropertyNameTokens) {
+                yield return CommentOrWhitespaceToken;
+            }
+            // End of string
+            yield break;
+        }
+
+        // Property name
+        PropertyNameTokens.Add(new JsonhToken(JsonTokenType.PropertyName, StringToken.Value));
+
+        // Braceless object
+        foreach (Result<JsonhToken> ObjectToken in ReadBracelessObject(PropertyNameTokens)) {
+            if (ObjectToken.IsError) {
+                yield return ObjectToken.Error;
+                yield break;
+            }
+            yield return ObjectToken;
+        }
+    }
     private IEnumerable<Result<JsonhToken>> ReadProperty(IEnumerable<JsonhToken>? PropertyNameTokens = null) {
         // Property name
         if (PropertyNameTokens is not null) {
@@ -597,14 +615,11 @@ public sealed partial class JsonhReader : IDisposable {
         // Optional comma
         ReadOne(',');
     }
-    private IEnumerable<Result<JsonhToken>> ReadPropertyName(string? String = null) {
+    private IEnumerable<Result<JsonhToken>> ReadPropertyName() {
         // String
-        if (String is null) {
-            if (ReadString().TryGetError(out Error StringError, out JsonhToken StringToken)) {
-                yield return StringError;
-                yield break;
-            }
-            String = StringToken.Value;
+        if (ReadString().TryGetError(out Error StringError, out JsonhToken StringToken)) {
+            yield return StringError;
+            yield break;
         }
 
         // Comments & whitespace
@@ -623,7 +638,7 @@ public sealed partial class JsonhReader : IDisposable {
         }
 
         // End of property name
-        yield return new JsonhToken(JsonTokenType.PropertyName, String);
+        yield return new JsonhToken(JsonTokenType.PropertyName, StringToken.Value);
     }
     private IEnumerable<Result<JsonhToken>> ReadArray() {
         // Opening bracket
