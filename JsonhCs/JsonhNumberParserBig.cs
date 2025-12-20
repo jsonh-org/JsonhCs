@@ -1,3 +1,5 @@
+using System.Numerics;
+using ExtendedNumerics;
 using ResultZero;
 
 namespace JsonhCs;
@@ -8,14 +10,15 @@ namespace JsonhCs;
 /// <remarks>
 /// Unlike <see cref="JsonhReader.ReadElement()"/>, minimal validation is done here. Ensure the input is valid.
 /// </remarks>
-public static class JsonhNumberParser {
+public static class JsonhNumberParserBig {
     /// <summary>
     /// Converts a JSONH number to a base-10 real.
     /// For example:<br/>
     /// Input: <c>+5.2e3.0</c><br/>
     /// Output: <c>5200</c>
     /// </summary>
-    public static Result<double> Parse(string JsonhNumber) {
+    /// <param name="Decimals">Number of decimal places to use when a fractional exponent is given.</param>
+    public static Result<BigReal> Parse(string JsonhNumber, int Decimals = 15) {
         // Remove underscores
         JsonhNumber = JsonhNumber.Replace("_", "");
         ReadOnlySpan<char> Digits = JsonhNumber.AsSpan();
@@ -50,7 +53,7 @@ public static class JsonhNumberParser {
         }
 
         // Parse number with base digits
-        if (ParseFractionalNumberWithExponent(Digits, BaseDigits).TryGetError(out Error NumberError, out double Number)) {
+        if (ParseFractionalNumberWithExponent(Digits, BaseDigits, Decimals).TryGetError(out Error NumberError, out BigReal Number)) {
             return NumberError;
         }
 
@@ -64,7 +67,7 @@ public static class JsonhNumberParser {
     /// <summary>
     /// Converts a fractional number with an exponent (e.g. <c>12.3e4.5</c>) from the given base (e.g. <c>01234567</c>) to a base-10 real.
     /// </summary>
-    private static Result<double> ParseFractionalNumberWithExponent(ReadOnlySpan<char> Digits, ReadOnlySpan<char> BaseDigits) {
+    private static Result<BigReal> ParseFractionalNumberWithExponent(ReadOnlySpan<char> Digits, ReadOnlySpan<char> BaseDigits, int Decimals) {
         // Find exponent
         int ExponentIndex = -1;
         // Hexadecimal exponent
@@ -95,24 +98,24 @@ public static class JsonhNumberParser {
         ReadOnlySpan<char> ExponentPart = Digits[(ExponentIndex + 1)..];
 
         // Parse mantissa and exponent
-        if (ParseFractionalNumber(MantissaPart, BaseDigits).TryGetError(out Error MantissaError, out double Mantissa)) {
+        if (ParseFractionalNumber(MantissaPart, BaseDigits).TryGetError(out Error MantissaError, out BigReal Mantissa)) {
             return MantissaError;
         }
-        if (ParseFractionalNumber(ExponentPart, BaseDigits).TryGetError(out Error ExponentError, out double Exponent)) {
+        if (ParseFractionalNumber(ExponentPart, BaseDigits).TryGetError(out Error ExponentError, out BigReal Exponent)) {
             return ExponentError;
         }
 
         // Multiply mantissa by 10 ^ exponent
-        return Mantissa * double.Pow(10, Exponent);
+        return Mantissa * BigReal.Pow(10, Exponent, Decimals);
     }
     /// <summary>
     /// Converts a fractional number (e.g. <c>123.45</c>) from the given base (e.g. <c>01234567</c>) to a base-10 real.
     /// </summary>
-    private static Result<double> ParseFractionalNumber(ReadOnlySpan<char> Digits, ReadOnlySpan<char> BaseDigits) {
+    private static Result<BigReal> ParseFractionalNumber(ReadOnlySpan<char> Digits, ReadOnlySpan<char> BaseDigits) {
         // Optimization for base-10 digits
         if (BaseDigits is "0123456789") {
             try {
-                return double.Parse(Digits);
+                return BigReal.Parse(Digits);
             }
             catch (Exception Ex) {
                 return Ex;
@@ -123,7 +126,7 @@ public static class JsonhNumberParser {
         int DotIndex = Digits.IndexOf('.');
         // If no dot then parse integer
         if (DotIndex < 0) {
-            return ParseWholeNumber(Digits, BaseDigits).Try(Long => (double)Long);
+            return ParseWholeNumber(Digits, BaseDigits).Try(BigInteger => (BigReal)BigInteger);
         }
 
         // Get parts of number
@@ -131,24 +134,24 @@ public static class JsonhNumberParser {
         ReadOnlySpan<char> FractionPart = Digits[(DotIndex + 1)..];
 
         // Parse parts of number
-        if (ParseWholeNumber(WholePart, BaseDigits).TryGetError(out Error WholeError, out long Whole)) {
+        if (ParseWholeNumber(WholePart, BaseDigits).TryGetError(out Error WholeError, out BigInteger Whole)) {
             return WholeError;
         }
-        if (ParseWholeNumber(FractionPart, BaseDigits).TryGetError(out Error FractionError, out long Fraction)) {
+        if (ParseWholeNumber(FractionPart, BaseDigits).TryGetError(out Error FractionError, out BigInteger Fraction)) {
             return FractionError;
         }
 
         // Combine whole and fraction
-        return double.Parse(Whole + "." + Fraction);
+        return BigReal.Parse(Whole + "." + Fraction);
     }
     /// <summary>
     /// Converts a whole number (e.g. <c>12345</c>) from the given base (e.g. <c>01234567</c>) to a base-10 integer.
     /// </summary>
-    private static Result<long> ParseWholeNumber(ReadOnlySpan<char> Digits, ReadOnlySpan<char> BaseDigits) {
+    private static Result<BigInteger> ParseWholeNumber(ReadOnlySpan<char> Digits, ReadOnlySpan<char> BaseDigits) {
         // Optimization for base-10 digits
         if (BaseDigits is "0123456789") {
             try {
-                return long.Parse(Digits);
+                return BigInteger.Parse(Digits);
             }
             catch (Exception Ex) {
                 return Ex;
@@ -167,7 +170,7 @@ public static class JsonhNumberParser {
         }
 
         // Add each column of digits
-        long Integer = 0;
+        BigInteger Integer = 0;
         for (int Index = 0; Index < Digits.Length; Index++) {
             // Get current digit
             char DigitChar = Digits[Index];
@@ -180,7 +183,7 @@ public static class JsonhNumberParser {
 
             // Get magnitude of current digit column
             int ColumnNumber = Digits.Length - 1 - Index;
-            long ColumnMagnitude = (long)Math.Pow(BaseDigits.Length, ColumnNumber);
+            BigInteger ColumnMagnitude = BigInteger.Pow(BaseDigits.Length, ColumnNumber);
 
             // Add value of column
             Integer += DigitInt * ColumnMagnitude;

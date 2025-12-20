@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using ExtendedNumerics;
 
 namespace JsonhCs.Tests;
@@ -135,5 +136,23 @@ public class ParseTests {
         JsonhReader.ParseElement<int>(Jsonh2, new JsonhReaderOptions() {
             ParseSingleElement = true,
         }).IsError.ShouldBeFalse();
+    }
+    [Fact]
+    public void BigNumbersTest() {
+        string Jsonh = """
+            [3.5, 1e99999]
+            """;
+        JsonArray Element = JsonhReader.ParseElement<JsonArray>(Jsonh).Value!;
+
+        Element.Count.ShouldBe(2);
+        Element[0]!.ToString().ShouldBe("3.5");
+        Element[1]!.ToString().ShouldBe("Infinity");
+
+        JsonArray Element2 = JsonhReader.ParseElement<JsonArray>(Jsonh, new JsonhReaderOptions() {
+            BigNumbers = true,
+        }).Value!;
+        Element2.Count.ShouldBe(2);
+        Element2[0]!.ToString().ShouldBe("3.5");
+        Element2[1]!.ToString().ShouldBe(BigReal.Parse("1e99999").ToString());
     }
 }

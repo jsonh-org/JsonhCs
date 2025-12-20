@@ -229,10 +229,19 @@ public sealed partial class JsonhReader : IDisposable {
                     }
                     // Number
                     case JsonTokenType.Number: {
-                        if (JsonhNumberParser.Parse(Token.Value).TryGetError(out Error NumberError, out BigReal Number)) {
-                            return NumberError;
+                        JsonNode Element;
+                        if (Options.BigNumbers) {
+                            if (JsonhNumberParserBig.Parse(Token.Value).TryGetError(out Error NumberError, out BigReal Number)) {
+                                return NumberError;
+                            }
+                            Element = JsonNode.Parse(Number.ToString())!;
                         }
-                        JsonNode Element = JsonNode.Parse(Number.ToString())!;
+                        else {
+                            if (JsonhNumberParser.Parse(Token.Value).TryGetError(out Error NumberError, out double Number)) {
+                                return NumberError;
+                            }
+                            Element = JsonValue.Create(Number);
+                        }
                         if (SubmitElement(Element)) {
                             return Element;
                         }

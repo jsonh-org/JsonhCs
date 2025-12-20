@@ -1,3 +1,5 @@
+using ExtendedNumerics;
+
 namespace JsonhCs;
 
 /// <summary>
@@ -31,6 +33,16 @@ public record struct JsonhReaderOptions() {
     /// This option does not apply when reading elements, only when parsing elements.
     /// </remarks>
     public bool ParseSingleElement { get; set; } = false;
+    /// <summary>
+    /// Enables/disables parsing of numbers outside the range/precision of a double-precision float.
+    /// <code>
+    /// 1e99999 // parsed as exact number instead of infinity
+    /// </code>
+    /// </summary>
+    /// <remarks>
+    /// Numbers will be parsed as <see cref="BigReal"/> instead of <see cref="double"/>.
+    /// </remarks>
+    public bool BigNumbers { get; set; } = false;
 
     /// <summary>
     /// Returns whether <see cref="Version"/> is greater than or equal to <paramref name="MinimumVersion"/>.
