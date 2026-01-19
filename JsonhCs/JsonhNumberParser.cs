@@ -64,7 +64,7 @@ public static class JsonhNumberParser {
     /// <summary>
     /// Converts a fractional number with an exponent (e.g. <c>12.3e4.5</c>) from the given base (e.g. <c>01234567</c>) to a base-10 real.
     /// </summary>
-    private static Result<double> ParseFractionalNumberWithExponent(ReadOnlySpan<char> Digits, ReadOnlySpan<char> BaseDigits) {
+    private static Result<double> ParseFractionalNumberWithExponent(scoped ReadOnlySpan<char> Digits, scoped ReadOnlySpan<char> BaseDigits) {
         // Find exponent
         int ExponentIndex = -1;
         // Hexadecimal exponent
@@ -108,7 +108,7 @@ public static class JsonhNumberParser {
     /// <summary>
     /// Converts a fractional number (e.g. <c>123.45</c>) from the given base (e.g. <c>01234567</c>) to a base-10 real.
     /// </summary>
-    private static Result<double> ParseFractionalNumber(ReadOnlySpan<char> Digits, ReadOnlySpan<char> BaseDigits) {
+    private static Result<double> ParseFractionalNumber(scoped ReadOnlySpan<char> Digits, scoped ReadOnlySpan<char> BaseDigits) {
         // Optimization for base-10 digits
         if (BaseDigits is "0123456789") {
             try {
@@ -144,7 +144,7 @@ public static class JsonhNumberParser {
     /// <summary>
     /// Converts a whole number (e.g. <c>12345</c>) from the given base (e.g. <c>01234567</c>) to a base-10 integer.
     /// </summary>
-    private static Result<long> ParseWholeNumber(ReadOnlySpan<char> Digits, ReadOnlySpan<char> BaseDigits) {
+    private static Result<long> ParseWholeNumber(scoped ReadOnlySpan<char> Digits, scoped ReadOnlySpan<char> BaseDigits) {
         // Optimization for base-10 digits
         if (BaseDigits is "0123456789") {
             try {

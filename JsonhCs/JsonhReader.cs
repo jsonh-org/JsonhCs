@@ -904,7 +904,7 @@ public sealed partial class JsonhReader : IDisposable {
         // End of string
         return new JsonhToken(JsonTokenType.String, StringBuilder.ToString());
     }
-    private Result<JsonhToken> ReadQuotelessString(ReadOnlySpan<char> InitialChars = default, bool IsVerbatim = false) {
+    private Result<JsonhToken> ReadQuotelessString(scoped ReadOnlySpan<char> InitialChars = default, bool IsVerbatim = false) {
         bool IsNamedLiteralPossible = !IsVerbatim;
 
         // Read quoteless string
@@ -1086,7 +1086,7 @@ public sealed partial class JsonhReader : IDisposable {
         PartialCharsRead = default;
         return new JsonhToken(JsonTokenType.Number, NumberBuilder.ToString());
     }
-    private Result ReadNumberNoExponent(scoped ref ValueStringBuilder NumberBuilder, ReadOnlySpan<char> BaseDigits, bool HasBaseSpecifier = false, bool HasLeadingZero = false) {
+    private Result ReadNumberNoExponent(scoped ref ValueStringBuilder NumberBuilder, scoped ReadOnlySpan<char> BaseDigits, bool HasBaseSpecifier = false, bool HasLeadingZero = false) {
         // Leading underscore
         if (!HasBaseSpecifier && Peek() is '_') {
             return new Error("Leading `_` in number");
@@ -1429,7 +1429,7 @@ public sealed partial class JsonhReader : IDisposable {
         }
         return false;
     }
-    private char? ReadAny(params ReadOnlySpan<char> Options) {
+    private char? ReadAny(params scoped ReadOnlySpan<char> Options) {
         // Peek char
         if (Peek() is not char Next) {
             return null;
