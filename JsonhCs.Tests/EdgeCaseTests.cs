@@ -202,4 +202,24 @@ public class EdgeCaseTests {
 
         JsonhReader.ParseElement(Jsonh).IsError.ShouldBeTrue();
     }
+    [Fact]
+    public void FirstPropertyNameInBracelessObjectTest() {
+        string Jsonh = """
+            a: b
+            """;
+
+        JsonhReader.ParseElement(Jsonh).Value.Deserialize<Dictionary<string, string>>().ShouldBe(new() { ["a"] = "b" });
+
+        string Jsonh2 = """
+            0: b
+            """;
+
+        JsonhReader.ParseElement(Jsonh2).Value.Deserialize<Dictionary<string, string>>().ShouldBe(new() { ["0"] = "b" });
+
+        string Jsonh3 = """
+            true: b
+            """;
+
+        JsonhReader.ParseElement(Jsonh3).Value.Deserialize<Dictionary<string, string>>().ShouldBe(new() { ["true"] = "b" });
+    }
 }

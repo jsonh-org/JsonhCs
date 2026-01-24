@@ -429,18 +429,12 @@ public sealed partial class JsonhReader : IDisposable {
             }
 
             // Detect braceless object from property name
-            if (Token.Value.JsonType is JsonTokenType.String) {
-                foreach (Result<JsonhToken> Token2 in ReadBracelessObjectOrEndOfString(Token.Value)) {
-                    if (Token2.IsError) {
-                        yield return Token2.Error;
-                        yield break;
-                    }
-                    yield return Token2;
+            foreach (Result<JsonhToken> Token2 in ReadBracelessObjectOrEndOfPrimitive(Token.Value)) {
+                if (Token2.IsError) {
+                    yield return Token2.Error;
+                    yield break;
                 }
-            }
-            // Primitive value
-            else {
-                yield return Token;
+                yield return Token2;
             }
         }
     }
@@ -542,31 +536,35 @@ public sealed partial class JsonhReader : IDisposable {
             }
         }
     }
-    private IEnumerable<Result<JsonhToken>> ReadBracelessObjectOrEndOfString(JsonhToken StringToken) {
+    private IEnumerable<Result<JsonhToken>> ReadBracelessObjectOrEndOfPrimitive(JsonhToken PrimitiveToken) {
         // Comments & whitespace
-        List<JsonhToken> PropertyNameTokens = [];
+        List<JsonhToken>? PropertyNameTokens = null;
         foreach (Result<JsonhToken> CommentOrWhitespaceToken in ReadCommentsAndWhitespace()) {
             if (CommentOrWhitespaceToken.IsError) {
                 yield return CommentOrWhitespaceToken.Error;
                 yield break;
             }
+            PropertyNameTokens ??= [];
             PropertyNameTokens.Add(CommentOrWhitespaceToken.Value);
         }
 
-        // String
+        // Primitive
         if (!ReadOne(':')) {
-            // String
-            yield return StringToken;
+            // Primitive
+            yield return PrimitiveToken;
             // Comments & whitespace
-            foreach (JsonhToken CommentOrWhitespaceToken in PropertyNameTokens) {
-                yield return CommentOrWhitespaceToken;
+            if (PropertyNameTokens is not null) {
+                foreach (JsonhToken CommentOrWhitespaceToken in PropertyNameTokens) {
+                    yield return CommentOrWhitespaceToken;
+                }
             }
-            // End of string
+            // End of primitive
             yield break;
         }
 
         // Property name
-        PropertyNameTokens.Add(new JsonhToken(JsonTokenType.PropertyName, StringToken.Value));
+        PropertyNameTokens ??= [];
+        PropertyNameTokens.Add(new JsonhToken(JsonTokenType.PropertyName, PrimitiveToken.Value));
 
         // Braceless object
         foreach (Result<JsonhToken> ObjectToken in ReadBracelessObject(PropertyNameTokens)) {
@@ -957,13 +955,13 @@ public sealed partial class JsonhReader : IDisposable {
         // Match named literal
         if (IsNamedLiteralPossible) {
             if (StringBuilder.Equals("null")) {
-                return new JsonhToken(JsonTokenType.Null);
+                return new JsonhToken(JsonTokenType.Null, "null");
             }
             else if (StringBuilder.Equals("true")) {
-                return new JsonhToken(JsonTokenType.True);
+                return new JsonhToken(JsonTokenType.True, "true");
             }
             else if (StringBuilder.Equals("false")) {
-                return new JsonhToken(JsonTokenType.False);
+                return new JsonhToken(JsonTokenType.False, "false");
             }
         }
 
