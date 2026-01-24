@@ -138,8 +138,20 @@ public static class JsonhNumberParser {
             return FractionError;
         }
 
+        // Get fraction leading zeroes
+        int FractionLeadingZeroesCount = 0;
+        for (int Index = 0; Index < FractionPart.Length; Index++) {
+            if (FractionPart[Index] == '0') {
+                FractionLeadingZeroesCount++;
+            }
+            else {
+                break;
+            }
+        }
+        string FractionLeadingZeroes = new('0', FractionLeadingZeroesCount);
+
         // Combine whole and fraction
-        return double.Parse(Whole + "." + Fraction);
+        return double.Parse(Whole + "." + FractionLeadingZeroes + Fraction);
     }
     /// <summary>
     /// Converts a whole number (e.g. <c>12345</c>) from the given base (e.g. <c>01234567</c>) to a base-10 integer.

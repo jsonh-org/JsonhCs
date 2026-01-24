@@ -222,4 +222,12 @@ public class EdgeCaseTests {
 
         JsonhReader.ParseElement(Jsonh3).Value.Deserialize<Dictionary<string, string>>().ShouldBe(new() { ["true"] = "b" });
     }
+    [Fact]
+    public void FractionLeadingZeroesTest() {
+        string Jsonh = """
+            0.04
+            """;
+
+        JsonhReader.ParseElement(Jsonh).Value.Deserialize<double>().ShouldBe(0.04);
+    }
 }
