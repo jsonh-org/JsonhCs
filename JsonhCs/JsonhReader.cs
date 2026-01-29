@@ -27,7 +27,7 @@ public sealed partial class JsonhReader : IDisposable {
     /// </summary>
     public long CharCounter { get; set; }
     /// <summary>
-    /// The current depth level of the reader.
+    /// The current recursion depth of the reader.
     /// </summary>
     public int Depth { get; set; }
 
