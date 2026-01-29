@@ -11,6 +11,17 @@ public record struct JsonhReaderOptions() {
     /// </summary>
     public JsonhVersion Version { get; set; } = JsonhVersion.Latest;
     /// <summary>
+    /// Enables/disables checks for exactly one element when parsing.
+    /// <code>
+    /// "cat"
+    /// "dog" // Error: Expected single element
+    /// </code>
+    /// </summary>
+    /// <remarks>
+    /// This option does not apply when reading elements, only when parsing elements.
+    /// </remarks>
+    public bool ParseSingleElement { get; set; } = false;
+    /// <summary>
     /// Enables/disables parsing unclosed inputs.
     /// <code>
     /// {
@@ -22,17 +33,6 @@ public record struct JsonhReaderOptions() {
     /// Only some tokens can be incomplete in this mode, so it should not be relied upon.
     /// </remarks>
     public bool IncompleteInputs { get; set; } = false;
-    /// <summary>
-    /// Enables/disables checks for exactly one element when parsing.
-    /// <code>
-    /// "cat"
-    /// "dog" // Error: Expected single element
-    /// </code>
-    /// </summary>
-    /// <remarks>
-    /// This option does not apply when reading elements, only when parsing elements.
-    /// </remarks>
-    public bool ParseSingleElement { get; set; } = false;
     /// <summary>
     /// Enables/disables parsing of numbers outside the range/precision of a double-precision float.
     /// <code>
