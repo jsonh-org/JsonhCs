@@ -238,4 +238,12 @@ public class EdgeCaseTests {
 
         JsonhReader.ParseElement(Jsonh).Value.Deserialize<int>().ShouldBe(0_0);
     }
+    [Fact]
+    public void UnderscoreBesideDotTest() {
+        string Jsonh = """
+            [0_.0, 0._0]
+            """;
+
+        JsonhReader.ParseElement(Jsonh).Value.Deserialize<string[]>().ShouldBe(["0_.0", "0._0"]);
+    }
 }

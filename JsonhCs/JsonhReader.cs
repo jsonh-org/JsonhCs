@@ -1142,6 +1142,11 @@ public sealed partial class JsonhReader : IDisposable {
             }
             // Dot
             else if (Next is '.') {
+                // Disallow dot preceding underscore
+                if (NumberBuilder.Length >= 1 && NumberBuilder[^1] is '_') {
+                    return new Error("`.` must not follow `_` in number");
+                }
+
                 Read();
                 NumberBuilder.Append(Next);
                 IsEmpty = false;
@@ -1154,6 +1159,11 @@ public sealed partial class JsonhReader : IDisposable {
             }
             // Underscore
             else if (Next is '_') {
+                // Disallow underscore following dot
+                if (NumberBuilder.Length >= 1 && NumberBuilder[^1] is '.') {
+                    return new Error("`_` must not follow `.` in number");
+                }
+
                 Read();
                 NumberBuilder.Append(Next);
                 IsEmpty = false;
