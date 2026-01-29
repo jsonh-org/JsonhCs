@@ -230,4 +230,12 @@ public class EdgeCaseTests {
 
         JsonhReader.ParseElement(Jsonh).Value.Deserialize<double>().ShouldBe(0.04);
     }
+    [Fact]
+    public void UnderscoreAfterLeadingZeroTest() {
+        string Jsonh = """
+            0_0
+            """;
+
+        JsonhReader.ParseElement(Jsonh).Value.Deserialize<int>().ShouldBe(0_0);
+    }
 }

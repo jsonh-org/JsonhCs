@@ -1116,7 +1116,7 @@ public sealed partial class JsonhReader : IDisposable {
     }
     private Result ReadNumberNoExponent(scoped ref ValueStringBuilder NumberBuilder, scoped ReadOnlySpan<char> BaseDigits, bool HasBaseSpecifier = false, bool HasLeadingZero = false) {
         // Leading underscore
-        if (!HasBaseSpecifier && Peek() is '_') {
+        if (!HasBaseSpecifier && !HasLeadingZero && Peek() is '_') {
             return new Error("Leading `_` in number");
         }
 
