@@ -26,6 +26,10 @@ public sealed partial class JsonhReader : IDisposable {
     /// The number of characters read from <see cref="TextReader"/>.
     /// </summary>
     public long CharCounter { get; set; }
+    /// <summary>
+    /// The current depth level of the reader.
+    /// </summary>
+    public int Depth { get; set; }
 
     /// <summary>
     /// Characters that cannot be used unescaped in quoteless strings.
@@ -454,6 +458,13 @@ public sealed partial class JsonhReader : IDisposable {
         }
         // Start of object
         yield return new JsonhToken(JsonTokenType.StartObject);
+        Depth++;
+
+        // Check exceeded max depth
+        if (Depth > Options.MaxDepth) {
+            yield return new Error("Exceeded max depth");
+            yield break;
+        }
 
         while (true) {
             // Comments & whitespace
@@ -468,6 +479,7 @@ public sealed partial class JsonhReader : IDisposable {
             if (Peek() is not char Next) {
                 // End of incomplete object
                 if (Options.IncompleteInputs) {
+                    Depth--;
                     yield return new JsonhToken(JsonTokenType.EndObject);
                     yield break;
                 }
@@ -480,6 +492,7 @@ public sealed partial class JsonhReader : IDisposable {
             if (Next is '}') {
                 // End of object
                 Read();
+                Depth--;
                 yield return new JsonhToken(JsonTokenType.EndObject);
                 yield break;
             }
@@ -498,6 +511,13 @@ public sealed partial class JsonhReader : IDisposable {
     private IEnumerable<Result<JsonhToken>> ReadBracelessObject(IEnumerable<JsonhToken>? PropertyNameTokens = null) {
         // Start of object
         yield return new JsonhToken(JsonTokenType.StartObject);
+        Depth++;
+
+        // Check exceeded max depth
+        if (Depth > Options.MaxDepth) {
+            yield return new Error("Exceeded max depth");
+            yield break;
+        }
 
         // Initial tokens
         if (PropertyNameTokens is not null) {
@@ -522,6 +542,7 @@ public sealed partial class JsonhReader : IDisposable {
 
             if (Peek() is not char) {
                 // End of braceless object
+                Depth--;
                 yield return new JsonhToken(JsonTokenType.EndObject);
                 yield break;
             }
@@ -655,6 +676,13 @@ public sealed partial class JsonhReader : IDisposable {
         }
         // Start of array
         yield return new JsonhToken(JsonTokenType.StartArray);
+        Depth++;
+
+        // Check exceeded max depth
+        if (Depth > Options.MaxDepth) {
+            yield return new Error("Exceeded max depth");
+            yield break;
+        }
 
         while (true) {
             // Comments & whitespace
@@ -669,6 +697,7 @@ public sealed partial class JsonhReader : IDisposable {
             if (Peek() is not char Next) {
                 // End of incomplete array
                 if (Options.IncompleteInputs) {
+                    Depth--;
                     yield return new JsonhToken(JsonTokenType.EndArray);
                     yield break;
                 }
@@ -681,6 +710,7 @@ public sealed partial class JsonhReader : IDisposable {
             if (Next is ']') {
                 // End of array
                 Read();
+                Depth--;
                 yield return new JsonhToken(JsonTokenType.EndArray);
                 yield break;
             }

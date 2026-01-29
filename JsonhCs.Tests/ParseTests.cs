@@ -155,4 +155,26 @@ public class ParseTests {
         Element2[0]!.ToString().ShouldBe("3.5");
         Element2[1]!.ToString().ShouldBe(BigReal.Parse("1e99999").ToString());
     }
+    [Fact]
+    public void MaxDepthTest() {
+        string Jsonh = """
+            {
+              a: {
+                b: {
+                  c: ""
+                }
+                d: {
+                }
+              }
+            }
+            """;
+
+        JsonhReader.ParseElement(Jsonh, new JsonhReaderOptions() {
+            MaxDepth = 2,
+        }).IsError.ShouldBeTrue();
+
+        JsonhReader.ParseElement(Jsonh, new JsonhReaderOptions() {
+            MaxDepth = 3,
+        }).IsError.ShouldBeFalse();
+    }
 }
