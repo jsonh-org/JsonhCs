@@ -52,7 +52,7 @@ string Jsonh = """
         this is: awesome
     }
     """;
-string Element = JsonhCs.JsonhReader.ParseElement<string>(Jsonh).Value!;
+JsonObject Element = JsonhCs.JsonhReader.ParseElement<JsonObject>(Jsonh).Value!;
 ```
 
 ### Source Generation
