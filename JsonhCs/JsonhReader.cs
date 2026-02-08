@@ -299,10 +299,12 @@ public sealed partial class JsonhReader : IDisposable {
         Result<JsonNode?> NextElement = ParseNextElement();
 
         // Ensure exactly one element
-        if (Options.ParseSingleElement) {
-            foreach (Result<JsonhToken> Token in ReadEndOfElements()) {
-                if (Token.IsError) {
-                    return Token.Error;
+        if (NextElement.IsValue) {
+            if (Options.ParseSingleElement) {
+                foreach (Result<JsonhToken> Token in ReadEndOfElements()) {
+                    if (Token.IsError) {
+                        return Token.Error;
+                    }
                 }
             }
         }
