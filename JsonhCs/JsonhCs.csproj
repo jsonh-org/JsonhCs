@@ -37,7 +37,7 @@
       <Pack>True</Pack>
       <PackagePath>/</PackagePath>
     </None>
-    <None Include="../../Jsonh/IconUpscaledSquare.png">
+    <None Include="../IconUpscaledSquare.png">
       <Pack>True</Pack>
       <PackagePath>/</PackagePath>
     </None>
