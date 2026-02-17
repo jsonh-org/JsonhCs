@@ -1,12 +1,13 @@
-using System.Buffers;
-using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using ExtendedNumerics;
 using LinkDotNet.StringBuilder;
 using ResultZero;
+using System.Buffers;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace JsonhCs;
 
@@ -1349,15 +1350,26 @@ public sealed partial class JsonhReader : IDisposable {
             }
         }
     }
-    private Result<uint> ReadHexSequence(int Length) {
-        Span<char> HexChars = stackalloc char[Length];
+    private Result<uint> ReadHexSequence(uint Length) {
+        Debug.Assert(Length <= 8);
 
-        for (int Index = 0; Index < Length; Index++) {
+        uint Value = 0;
+
+        for (uint Index = 0; Index < Length; Index++) {
             char? Next = Read();
 
             // Hex digit
-            if (Next is not null && (Next is (>= '0' and <= '9') or (>= 'A' and <= 'F') or (>= 'a' and <= 'f'))) {
-                HexChars[Index] = Next.Value;
+            if (Next is not null && Next is (>= '0' and <= '9') or (>= 'A' and <= 'F') or (>= 'a' and <= 'f')) {
+                // Get hex digit
+                char Digit = Next.Value;
+                // Convert hex digit to integer
+                uint Integer = Digit switch {
+                    (>= 'A' and <= 'F') => (uint)(Digit - 'A' + 10),
+                    (>= 'a' and <= 'f') => (uint)(Digit - 'a' + 10),
+                    _ => (uint)(Digit - '0')
+                };
+                // Aggregate digit into value
+                Value = (Value * 16) + Integer;
             }
             // Unexpected char
             else {
@@ -1365,8 +1377,8 @@ public sealed partial class JsonhReader : IDisposable {
             }
         }
 
-        // Parse unicode character from hex digits
-        return uint.Parse(HexChars, NumberStyles.AllowHexSpecifier);
+        // Return aggregated value
+        return Value;
     }
     private Result ReadEscapeSequence(scoped ref ValueStringBuilder StringBuilder) {
         if (Read() is not char EscapeChar) {
