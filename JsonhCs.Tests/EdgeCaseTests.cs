@@ -246,4 +246,15 @@ public class EdgeCaseTests {
 
         JsonhReader.ParseElement(Jsonh).Value.Deserialize<string[]>().ShouldBe(["0_.0", "0._0"]);
     }
+    [Fact]
+    public void MultiQuotedStringWithNonAsciiIndentsTest() {
+        string Jsonh = """"
+            　
+            """
+            　　 a
+            　　"""
+            """";
+
+        JsonhReader.ParseElement(Jsonh).Value.Deserialize<string>().ShouldBe(" a");
+    }
 }
