@@ -257,4 +257,10 @@ public class EdgeCaseTests {
 
         JsonhReader.ParseElement(Jsonh).Value.Deserialize<string>().ShouldBe(" a");
     }
+    [Fact]
+    public void JoinCrLfInMultiQuotedStringTest() {
+        string Jsonh = " ''' \r\nHello\r\n ''' ";
+
+        JsonhReader.ParseElement(Jsonh).Value.Deserialize<string>().ShouldBe("Hello");
+    }
 }
