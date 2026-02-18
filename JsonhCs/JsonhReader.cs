@@ -1080,7 +1080,7 @@ public sealed partial class JsonhReader : IDisposable {
         // Possible hexadecimal exponent
         if (NumberBuilder[^1] is 'e' or 'E') {
             // Read sign (mandatory)
-            if (ReadAny('+', '-') is char ExponentSign) {
+            if (ReadAny('-', '+') is char ExponentSign) {
                 NumberBuilder.Append(ExponentSign);
 
                 // Missing digit between base specifier and exponent (e.g. `0xe+`)
