@@ -1144,7 +1144,7 @@ public sealed partial class JsonhReader : IDisposable {
             }
             // Dot
             else if (Next is '.') {
-                // Disallow dot preceding underscore
+                // Disallow dot following underscore
                 if (NumberBuilder.Length >= 1 && NumberBuilder[^1] is '_') {
                     return new Error("`.` must not follow `_` in number");
                 }
