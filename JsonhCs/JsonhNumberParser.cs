@@ -85,7 +85,7 @@ public static class JsonhNumberParser {
         else {
             ExponentIndex = Digits.IndexOfAny('e', 'E');
         }
-        
+
         // If no exponent then parse real
         if (ExponentIndex < 0) {
             return ParseFractionalNumber(Digits, BaseDigits);
