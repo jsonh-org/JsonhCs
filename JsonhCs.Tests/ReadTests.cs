@@ -51,6 +51,6 @@ public class ReadTests {
         });
         Result<JsonhToken>[] Tokens2 = [.. Reader2.ReadElement()];
 
-        Tokens2[1].IsError.ShouldBe(true);
+        Tokens2[1].IsError.ShouldBeTrue();
     }
 }
