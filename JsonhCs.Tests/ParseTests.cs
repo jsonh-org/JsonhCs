@@ -140,20 +140,26 @@ public class ParseTests {
     [Fact]
     public void BigNumbersTest() {
         string Jsonh = """
-            [3.5, 1e99999]
+            [
+                3.5,
+                1e99999,
+                999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999
+            ]
             """;
         double[] Element = JsonhReader.ParseElement<double[]>(Jsonh).Value!;
 
-        Element.Length.ShouldBe(2);
+        Element.Length.ShouldBe(3);
         Element[0].ShouldBe(3.5);
         Element[1].ShouldBe(double.PositiveInfinity);
+        Element[2].ShouldBe(double.PositiveInfinity);
 
         JsonArray Element2 = JsonhReader.ParseElement<JsonArray>(Jsonh, new JsonhReaderOptions() {
             BigNumbers = true,
         }).Value!;
-        Element2.Count.ShouldBe(2);
+        Element2.Count.ShouldBe(3);
         Element2[0]!.ToString().ShouldBe("3.5");
         Element2[1]!.ToString().ShouldBe(BigReal.Parse("1e99999").ToString());
+        Element2[2]!.ToString().ShouldBe(BigReal.Parse("999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999").ToString());
     }
     [Fact]
     public void MaxDepthTest() {
