@@ -1,3 +1,4 @@
+using System.Globalization;
 using ResultZero;
 
 namespace JsonhCs;
@@ -123,7 +124,7 @@ public static class JsonhNumberParser {
         int DotIndex = Digits.IndexOf('.');
         // If no dot then parse integer
         if (DotIndex < 0) {
-            return ParseWholeNumber(Digits, BaseDigits).Try(Long => (double)Long);
+            return ParseWholeNumber(Digits, BaseDigits);
         }
 
         // Get parts of number
@@ -131,10 +132,10 @@ public static class JsonhNumberParser {
         ReadOnlySpan<char> FractionPart = Digits[(DotIndex + 1)..];
 
         // Parse parts of number
-        if (ParseWholeNumber(WholePart, BaseDigits).TryGetError(out Error WholeError, out long Whole)) {
+        if (ParseWholeNumber(WholePart, BaseDigits).TryGetError(out Error WholeError, out double Whole)) {
             return WholeError;
         }
-        if (ParseWholeNumber(FractionPart, BaseDigits).TryGetError(out Error FractionError, out long Fraction)) {
+        if (ParseWholeNumber(FractionPart, BaseDigits).TryGetError(out Error FractionError, out double Fraction)) {
             return FractionError;
         }
 
@@ -156,11 +157,11 @@ public static class JsonhNumberParser {
     /// <summary>
     /// Converts a whole number (e.g. <c>12345</c>) from the given base (e.g. <c>01234567</c>) to a base-10 integer.
     /// </summary>
-    private static Result<long> ParseWholeNumber(scoped ReadOnlySpan<char> Digits, scoped ReadOnlySpan<char> BaseDigits) {
+    private static Result<double> ParseWholeNumber(scoped ReadOnlySpan<char> Digits, scoped ReadOnlySpan<char> BaseDigits) {
         // Optimization for base-10 digits
         if (BaseDigits is "0123456789") {
             try {
-                return long.Parse(Digits);
+                return double.Parse(Digits, NumberStyles.Integer);
             }
             catch (Exception Ex) {
                 return Ex;
@@ -179,7 +180,7 @@ public static class JsonhNumberParser {
         }
 
         // Add each column of digits
-        long Integer = 0;
+        double Integer = 0;
         for (int Index = 0; Index < Digits.Length; Index++) {
             // Get current digit
             char DigitChar = Digits[Index];
@@ -192,7 +193,7 @@ public static class JsonhNumberParser {
 
             // Get magnitude of current digit column
             int ColumnNumber = Digits.Length - 1 - Index;
-            long ColumnMagnitude = (long)Math.Pow(BaseDigits.Length, ColumnNumber);
+            double ColumnMagnitude = Math.Pow(BaseDigits.Length, ColumnNumber);
 
             // Add value of column
             Integer += DigitInt * ColumnMagnitude;
