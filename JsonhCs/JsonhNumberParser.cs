@@ -113,7 +113,7 @@ public static class JsonhNumberParser {
         // Optimization for base-10 digits
         if (BaseDigits is "0123456789") {
             try {
-                return double.Parse(Digits);
+                return double.Parse(Digits, NumberStyles.Float, CultureInfo.InvariantCulture);
             }
             catch (Exception Ex) {
                 return Ex;
@@ -152,7 +152,9 @@ public static class JsonhNumberParser {
         string FractionLeadingZeroes = new('0', FractionLeadingZeroesCount);
 
         // Combine whole and fraction
-        return double.Parse(Whole + "." + FractionLeadingZeroes + Fraction);
+        string WholeDigits = Whole.ToString("0", CultureInfo.InvariantCulture);
+        string FractionDigits = Fraction.ToString("0", CultureInfo.InvariantCulture);
+        return double.Parse(WholeDigits + "." + FractionLeadingZeroes + FractionDigits);
     }
     /// <summary>
     /// Converts a whole number (e.g. <c>12345</c>) from the given base (e.g. <c>01234567</c>) to a base-10 integer.
@@ -161,7 +163,7 @@ public static class JsonhNumberParser {
         // Optimization for base-10 digits
         if (BaseDigits is "0123456789") {
             try {
-                return double.Parse(Digits, NumberStyles.Integer);
+                return double.Parse(Digits, NumberStyles.Integer, CultureInfo.InvariantCulture);
             }
             catch (Exception Ex) {
                 return Ex;
@@ -191,12 +193,8 @@ public static class JsonhNumberParser {
                 return new Error($"Invalid digit: '{DigitChar}'");
             }
 
-            // Get magnitude of current digit column
-            int ColumnNumber = Digits.Length - 1 - Index;
-            double ColumnMagnitude = Math.Pow(BaseDigits.Length, ColumnNumber);
-
             // Add value of column
-            Integer += DigitInt * ColumnMagnitude;
+            Integer = (Integer * BaseDigits.Length) + DigitInt;
         }
 
         // Apply sign

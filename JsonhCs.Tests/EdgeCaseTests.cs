@@ -263,4 +263,12 @@ public class EdgeCaseTests {
 
         JsonhReader.ParseElement(Jsonh).Value.Deserialize<string>().ShouldBe("Hello");
     }
+    [Fact]
+    public void MassiveIntegerTest() {
+        string Jsonh = """
+            0x999_999_999_999_999_999_999_999
+            """;
+
+        JsonhReader.ParseElement(Jsonh).Value.Deserialize<double>().ShouldBe(47_536_897_508_558_602_556_126_370_201.0);
+    }
 }
