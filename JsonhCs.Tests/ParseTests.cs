@@ -142,11 +142,11 @@ public class ParseTests {
         string Jsonh = """
             [3.5, 1e99999]
             """;
-        JsonArray Element = JsonhReader.ParseElement<JsonArray>(Jsonh).Value!;
+        double[] Element = JsonhReader.ParseElement<double[]>(Jsonh).Value!;
 
-        Element.Count.ShouldBe(2);
-        Element[0]!.ToString().ShouldBe("3.5");
-        Element[1]!.ToString().ShouldBe("Infinity");
+        Element.Length.ShouldBe(2);
+        Element[0].ShouldBe(3.5);
+        Element[1].ShouldBe(double.PositiveInfinity);
 
         JsonArray Element2 = JsonhReader.ParseElement<JsonArray>(Jsonh, new JsonhReaderOptions() {
             BigNumbers = true,
