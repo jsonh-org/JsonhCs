@@ -277,4 +277,12 @@ public class EdgeCaseTests {
             47_536_897_508_558_602_556_126_370_201.0,
         ]);
     }
+    [Fact]
+    public void FractionalHexadecimalNumbersTest() {
+        string Jsonh = """
+            [0xA.A, 0xA.A1]
+            """;
+
+        JsonhReader.ParseElement(Jsonh).Value.Deserialize<double[]>().ShouldBe([10.625, 10.62890625]);
+    }
 }

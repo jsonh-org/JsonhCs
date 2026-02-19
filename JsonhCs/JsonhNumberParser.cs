@@ -135,26 +135,25 @@ public static class JsonhNumberParser {
         if (ParseWholeNumber(WholePart, BaseDigits).TryGetError(out Error WholeError, out double Whole)) {
             return WholeError;
         }
-        if (ParseWholeNumber(FractionPart, BaseDigits).TryGetError(out Error FractionError, out double Fraction)) {
-            return FractionError;
-        }
 
-        // Get fraction leading zeroes
-        int FractionLeadingZeroesCount = 0;
-        for (int Index = 0; Index < FractionPart.Length; Index++) {
-            if (FractionPart[Index] == '0') {
-                FractionLeadingZeroesCount++;
+        // Add each column of fraction digits
+        double Fraction = 0;
+        for (int Index = FractionPart.Length - 1; Index >= 0; Index--) {
+            // Get current digit
+            char DigitChar = FractionPart[Index];
+            int DigitInt = BaseDigits.IndexOf(char.ToLowerInvariant(DigitChar));
+
+            // Ensure digit is valid
+            if (DigitInt < 0) {
+                return new Error($"Invalid digit: '{DigitChar}'");
             }
-            else {
-                break;
-            }
+
+            // Add value of column
+            Fraction = (Fraction + DigitInt) / BaseDigits.Length;
         }
-        string FractionLeadingZeroes = new('0', FractionLeadingZeroesCount);
 
         // Combine whole and fraction
-        string WholeDigits = Whole.ToString("0", CultureInfo.InvariantCulture);
-        string FractionDigits = Fraction.ToString("0", CultureInfo.InvariantCulture);
-        return double.Parse(WholeDigits + "." + FractionLeadingZeroes + FractionDigits);
+        return Whole + Fraction;
     }
     /// <summary>
     /// Converts a whole number (e.g. <c>12345</c>) from the given base (e.g. <c>01234567</c>) to a base-10 integer.
