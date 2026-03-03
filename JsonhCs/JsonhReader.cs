@@ -158,6 +158,64 @@ public sealed partial class JsonhReader : IDisposable {
         using JsonhReader Reader = new(String, Options);
         return Reader.ParseNode();
     }
+    /// <summary>
+    /// 
+    /// </summary>
+    public static Result<string> InsertProperty(string Source, string PropertyName, string RawProperty) {
+        long CurrentDepth = 0;
+        long StartTokenCharCounter = 0;
+        using JsonhReader Reader = new(Source);
+
+        foreach (Result<JsonhToken> TokenResult in Reader.ReadElement()) {
+            // Check error
+            if (!TokenResult.TryGetValue(out JsonhToken Token)) {
+                return TokenResult.Error;
+            }
+
+            switch (Token.JsonType) {
+                // Start structure
+                case JsonTokenType.StartObject or JsonTokenType.StartArray: {
+                    CurrentDepth++;
+                    break;
+                }
+                // End object
+                case JsonTokenType.EndObject: {
+                    if (CurrentDepth == 1) {
+                        int InsertIndex = (int)StartTokenCharCounter;
+
+                        Source = Source[..InsertIndex] + "\n" + new string(' ', (int)CurrentDepth * 4) + RawProperty + Source[InsertIndex..];
+                        return Source;
+                    }
+
+                    CurrentDepth--;
+                    break;
+                }
+                // End structure
+                case JsonTokenType.EndObject or JsonTokenType.EndArray: {
+                    CurrentDepth--;
+                    break;
+                }
+                // Property name
+                case JsonTokenType.PropertyName: {
+                    if (CurrentDepth == 1 && Token.Value == PropertyName) {
+                        // Path found
+                        int StartIndex = (int)StartTokenCharCounter;
+                        foreach (Result<JsonhToken> _ in Reader.ReadElement()) {
+                        }
+                        int EndIndex = (int)Reader.CharCounter;
+                        Source = Source[..StartIndex] + "\n" + new string(' ', (int)CurrentDepth * 4) + RawProperty + Source[EndIndex..];
+                        return Source;
+                    }
+                    break;
+                }
+            }
+
+            StartTokenCharCounter = Reader.CharCounter;
+        }
+
+        // Path not found
+        return new Error("Not found");
+    }
 
     /// <summary>
     /// Parses a single element from the reader.
