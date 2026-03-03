@@ -338,8 +338,8 @@ public sealed partial class JsonhReader : IDisposable {
                 return Error;
             }
 
-            if (!IsPropertyValue) {
-                if (Token.JsonType is JsonTokenType.Null or JsonTokenType.True or JsonTokenType.False or JsonTokenType.String or JsonTokenType.Number or JsonTokenType.StartObject or JsonTokenType.StartArray or JsonTokenType.PropertyName) {
+            if (Token.JsonType is JsonTokenType.Null or JsonTokenType.True or JsonTokenType.False or JsonTokenType.String or JsonTokenType.Number or JsonTokenType.StartObject or JsonTokenType.StartArray or JsonTokenType.PropertyName) {
+                if (!IsPropertyValue) {
                     if (!IsStartOfStructure) {
                         ResultBuilder.Append(',');
                     }
@@ -348,6 +348,9 @@ public sealed partial class JsonhReader : IDisposable {
             }
             if (Token.JsonType is JsonTokenType.StartObject or JsonTokenType.StartArray) {
                 IsStartOfStructure = true;
+            }
+            else if (Token.JsonType is JsonTokenType.EndObject or JsonTokenType.EndArray) {
+                IsStartOfStructure = false;
             }
 
             switch (Token.JsonType) {
