@@ -53,4 +53,21 @@ public class ReadTests {
 
         Tokens2[1].IsError.ShouldBeTrue();
     }
+    [Fact]
+    public void FindPropertyValueTest() {
+        string Jsonh = """
+            // Original position
+            {
+              "a": "1",
+              "b": {
+                "c": "2"
+              },
+              "c":/* Final position */ "3"
+            }
+            """;
+        using JsonhReader Reader = new(Jsonh);
+
+        Reader.FindPropertyValue("c").ShouldBeTrue();
+        Reader.ParseElement<string>().Value.ShouldBe("3");
+    }
 }
