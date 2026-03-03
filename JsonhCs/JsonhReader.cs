@@ -91,7 +91,8 @@ public sealed partial class JsonhReader : IDisposable {
     /// </summary>
     [RequiresUnreferencedCode(UnreferencedCodeMessage), RequiresDynamicCode(UnreferencedCodeMessage)]
     public static Result<T?> ParseElement<T>(TextReader TextReader, JsonhReaderOptions? Options = null) {
-        return new JsonhReader(TextReader, Options).ParseElement<T>();
+        using JsonhReader Reader = new(TextReader, Options);
+        return Reader.ParseElement<T>();
     }
     /// <inheritdoc cref="ParseElement{T}(TextReader, JsonhReaderOptions?)"/>
     [RequiresUnreferencedCode(UnreferencedCodeMessage), RequiresDynamicCode(UnreferencedCodeMessage)]
@@ -100,14 +101,16 @@ public sealed partial class JsonhReader : IDisposable {
     }
     /// <inheritdoc cref="ParseElement{T}(TextReader, JsonhReaderOptions?)"/>
     public static Result<JsonNode?> ParseNode(TextReader TextReader, JsonhReaderOptions? Options = null) {
-        return new JsonhReader(TextReader, Options).ParseNode();
+        using JsonhReader Reader = new(TextReader, Options);
+        return Reader.ParseNode();
     }
     /// <summary>
     /// Parses a single element from a stream using a given encoding.
     /// </summary>
     [RequiresUnreferencedCode(UnreferencedCodeMessage), RequiresDynamicCode(UnreferencedCodeMessage)]
     public static Result<T?> ParseElement<T>(Stream Stream, Encoding Encoding, JsonhReaderOptions? Options = null) {
-        return new JsonhReader(Stream, Encoding, Options).ParseElement<T>();
+        using JsonhReader Reader = new(Stream, Encoding, Options);
+        return Reader.ParseElement<T>();
     }
     /// <inheritdoc cref="ParseElement{T}(Stream, Encoding, JsonhReaderOptions?)"/>
     [RequiresUnreferencedCode(UnreferencedCodeMessage), RequiresDynamicCode(UnreferencedCodeMessage)]
@@ -116,14 +119,16 @@ public sealed partial class JsonhReader : IDisposable {
     }
     /// <inheritdoc cref="ParseElement{T}(Stream, Encoding, JsonhReaderOptions?)"/>
     public static Result<JsonNode?> ParseNode(Stream Stream, Encoding Encoding, JsonhReaderOptions? Options = null) {
-        return new JsonhReader(Stream, Encoding, Options).ParseNode();
+        using JsonhReader Reader = new(Stream, Encoding, Options);
+        return Reader.ParseNode();
     }
     /// <summary>
     /// Parses a single element from a stream using the byte-order marks to detect the encoding.
     /// </summary>
     [RequiresUnreferencedCode(UnreferencedCodeMessage), RequiresDynamicCode(UnreferencedCodeMessage)]
     public static Result<T?> ParseElement<T>(Stream Stream, JsonhReaderOptions? Options = null) {
-        return new JsonhReader(Stream, Options).ParseElement<T>();
+        using JsonhReader Reader = new(Stream, Options);
+        return Reader.ParseElement<T>();
     }
     /// <inheritdoc cref="ParseElement{T}(Stream, JsonhReaderOptions?)"/>
     [RequiresUnreferencedCode(UnreferencedCodeMessage), RequiresDynamicCode(UnreferencedCodeMessage)]
@@ -132,14 +137,16 @@ public sealed partial class JsonhReader : IDisposable {
     }
     /// <inheritdoc cref="ParseElement{T}(Stream, JsonhReaderOptions?)"/>
     public static Result<JsonNode?> ParseNode(Stream Stream, JsonhReaderOptions? Options = null) {
-        return new JsonhReader(Stream, Options).ParseNode();
+        using JsonhReader Reader = new(Stream, Options);
+        return Reader.ParseNode();
     }
     /// <summary>
     /// Parses a single element from a string.
     /// </summary>
     [RequiresUnreferencedCode(UnreferencedCodeMessage), RequiresDynamicCode(UnreferencedCodeMessage)]
     public static Result<T?> ParseElement<T>(string String, JsonhReaderOptions? Options = null) {
-        return new JsonhReader(String, Options).ParseElement<T>();
+        using JsonhReader Reader = new(String, Options);
+        return Reader.ParseElement<T>();
     }
     /// <inheritdoc cref="ParseElement{T}(string, JsonhReaderOptions?)"/>
     [RequiresUnreferencedCode(UnreferencedCodeMessage), RequiresDynamicCode(UnreferencedCodeMessage)]
@@ -148,7 +155,8 @@ public sealed partial class JsonhReader : IDisposable {
     }
     /// <inheritdoc cref="ParseElement{T}(string, JsonhReaderOptions?)"/>
     public static Result<JsonNode?> ParseNode(string String, JsonhReaderOptions? Options = null) {
-        return new JsonhReader(String, Options).ParseNode();
+        using JsonhReader Reader = new(String, Options);
+        return Reader.ParseNode();
     }
 
     /// <summary>
