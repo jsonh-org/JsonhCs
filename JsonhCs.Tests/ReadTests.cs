@@ -76,19 +76,19 @@ public class ReadTests {
             {
               // Hello /* test */ world
               a: 'b'
-              "c": '''d'''
+              "c": '''私'''
               z: 0.05e1
             }
             """;
 
         using JsonhReader Reader = new(Jsonh);
         Reader.ParseJson().Value.ShouldBe("""
-            {"a":"b","c":"d","z":0.5}
+            {"a":"b","c":"私","z":0.5}
             """);
 
         using JsonhReader Reader2 = new(Jsonh);
         Reader2.ParseJson(IncludeComments: true).Value.ShouldBe("""
-            {/* Hello / * test * / world*/"a":"b","c":"d","z":0.5}
+            {/* Hello / * test * / world*/"a":"b","c":"私","z":0.5}
             """);
     }
 }

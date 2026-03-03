@@ -321,8 +321,9 @@ public sealed partial class JsonhReader : IDisposable {
         return NextElement;
     }
     /// <summary>
-    /// Parses a single element as minified JSON from the reader.<br/>
-    /// If <paramref name="IncludeComments"/> is true, comments are included (<c>/*</c> and <c>*/</c> are escaped as <c>/ *</c> and <c>* /</c>).
+    /// Parses a single element as minified JSON from the reader.<br/><br/>
+    /// If <paramref name="IncludeComments"/> is true, comments are included (<c>/*</c> and <c>*/</c> are escaped as <c>/ *</c> and <c>* /</c>).<br/><br/>
+    /// The result is not safe to embed in HTML.
     /// </summary>
     public Result<string> ParseJson(bool IncludeComments = false) {
         long CurrentDepth = 0;
@@ -376,7 +377,7 @@ public sealed partial class JsonhReader : IDisposable {
                 }
                 // String
                 case JsonTokenType.String: {
-                    ResultBuilder.Append(JsonValue.Create(Token.Value).ToJsonString());
+                    ResultBuilder.Append(JsonValue.Create(Token.Value).ToJsonString(MiniJson));
                     if (CurrentDepth == 0) {
                         return ResultBuilder.ToString();
                     }
@@ -433,7 +434,7 @@ public sealed partial class JsonhReader : IDisposable {
                 }
                 // Property Name
                 case JsonTokenType.PropertyName: {
-                    ResultBuilder.Append(JsonValue.Create(Token.Value).ToJsonString());
+                    ResultBuilder.Append(JsonValue.Create(Token.Value).ToJsonString(MiniJson));
                     ResultBuilder.Append(':');
                     break;
                 }
