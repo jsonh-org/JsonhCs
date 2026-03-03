@@ -4,6 +4,7 @@ using ResultZero;
 using System.Buffers;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -318,6 +319,144 @@ public sealed partial class JsonhReader : IDisposable {
         }
 
         return NextElement;
+    }
+    /// <summary>
+    /// Parses a single element as minified JSON from the reader.<br/>
+    /// If <paramref name="IncludeComments"/> is true, comments are included (<c>/*</c> and <c>*/</c> are escaped as <c>/ *</c> and <c>* /</c>).
+    /// </summary>
+    public Result<string> ParseJson(bool IncludeComments = false) {
+        long CurrentDepth = 0;
+        bool IsStartOfStructure = true;
+        bool IsPropertyValue = false;
+
+        using ValueStringBuilder ResultBuilder = new(stackalloc char[64]);
+
+        foreach (Result<JsonhToken> TokenResult in ReadElement()) {
+            // Check error
+            if (!TokenResult.TryGetValue(out JsonhToken Token, out Error Error)) {
+                return Error;
+            }
+
+            if (!IsPropertyValue) {
+                if (Token.JsonType is JsonTokenType.Null or JsonTokenType.True or JsonTokenType.False or JsonTokenType.String or JsonTokenType.Number or JsonTokenType.StartObject or JsonTokenType.StartArray or JsonTokenType.PropertyName) {
+                    if (!IsStartOfStructure) {
+                        ResultBuilder.Append(',');
+                    }
+                    IsStartOfStructure = false;
+                }
+            }
+            if (Token.JsonType is JsonTokenType.StartObject or JsonTokenType.StartArray) {
+                IsStartOfStructure = true;
+            }
+
+            switch (Token.JsonType) {
+                // Null
+                case JsonTokenType.Null: {
+                    ResultBuilder.Append("null");
+                    if (CurrentDepth == 0) {
+                        return ResultBuilder.ToString();
+                    }
+                    break;
+                }
+                // True
+                case JsonTokenType.True: {
+                    ResultBuilder.Append("true");
+                    if (CurrentDepth == 0) {
+                        return ResultBuilder.ToString();
+                    }
+                    break;
+                }
+                // False
+                case JsonTokenType.False: {
+                    ResultBuilder.Append("false");
+                    if (CurrentDepth == 0) {
+                        return ResultBuilder.ToString();
+                    }
+                    break;
+                }
+                // String
+                case JsonTokenType.String: {
+                    ResultBuilder.Append(JsonValue.Create(Token.Value).ToJsonString());
+                    if (CurrentDepth == 0) {
+                        return ResultBuilder.ToString();
+                    }
+                    break;
+                }
+                // Number
+                case JsonTokenType.Number: {
+                    if (Options.BigNumbers) {
+                        if (JsonhNumberParserBig.Parse(Token.Value).TryGetError(out Error NumberError, out BigReal Number)) {
+                            return NumberError;
+                        }
+                        ResultBuilder.Append(Number, formatProvider: CultureInfo.InvariantCulture);
+                    }
+                    else {
+                        if (JsonhNumberParser.Parse(Token.Value).TryGetError(out Error NumberError, out double Number)) {
+                            return NumberError;
+                        }
+                        ResultBuilder.Append(Number, formatProvider: CultureInfo.InvariantCulture);
+                    }
+                    if (CurrentDepth == 0) {
+                        return ResultBuilder.ToString();
+                    }
+                    break;
+                }
+                // Start Object
+                case JsonTokenType.StartObject: {
+                    ResultBuilder.Append('{');
+                    CurrentDepth++;
+                    break;
+                }
+                // Start Array
+                case JsonTokenType.StartArray: {
+                    ResultBuilder.Append('[');
+                    CurrentDepth++;
+                    break;
+                }
+                // End Object
+                case JsonTokenType.EndObject: {
+                    ResultBuilder.Append('}');
+                    CurrentDepth--;
+                    if (CurrentDepth == 0) {
+                        return ResultBuilder.ToString();
+                    }
+                    break;
+                }
+                // End Array
+                case JsonTokenType.EndArray: {
+                    ResultBuilder.Append(']');
+                    CurrentDepth--;
+                    if (CurrentDepth == 0) {
+                        return ResultBuilder.ToString();
+                    }
+                    break;
+                }
+                // Property Name
+                case JsonTokenType.PropertyName: {
+                    ResultBuilder.Append(JsonValue.Create(Token.Value).ToJsonString());
+                    ResultBuilder.Append(':');
+                    break;
+                }
+                // Comment
+                case JsonTokenType.Comment: {
+                    if (IncludeComments) {
+                        ResultBuilder.Append("/*");
+                        ResultBuilder.Append(Token.Value.Replace("/*", "/ *", StringComparison.Ordinal).Replace("*/", "* /", StringComparison.Ordinal));
+                        ResultBuilder.Append("*/");
+                    }
+                    break;
+                }
+                // Not implemented
+                default: {
+                    throw new NotImplementedException(Token.JsonType.ToString());
+                }
+            }
+
+            IsPropertyValue = Token.JsonType is JsonTokenType.PropertyName;
+        }
+
+        // End of input
+        return new Error("Expected token, got end of input");
     }
     /// <summary>
     /// Tries to find the given property name in the reader.<br/>
