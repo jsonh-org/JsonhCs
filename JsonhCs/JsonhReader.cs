@@ -1008,10 +1008,7 @@ public sealed partial class JsonhReader : IDisposable {
         // End of quoteless string
         return new JsonhToken(JsonTokenType.String, StringBuilder.ToString());
     }
-    private bool DetectQuotelessString(out ReadOnlySpan<char> WhitespaceChars) {
-        // Read whitespace
-        using ValueStringBuilder WhitespaceBuilder = new();
-
+    private bool DetectQuotelessString(ref ValueStringBuilder WhitespaceBuilder) {
         while (true) {
             // Peek char
             if (Peek() is not char Next) {
@@ -1021,7 +1018,6 @@ public sealed partial class JsonhReader : IDisposable {
             // Newline
             if (NewlineChars.Contains(Next)) {
                 // Quoteless strings cannot contain unescaped newlines
-                WhitespaceChars = WhitespaceBuilder.AsSpan();
                 return false;
             }
 
@@ -1034,9 +1030,6 @@ public sealed partial class JsonhReader : IDisposable {
             WhitespaceBuilder.Append(Next);
             Read();
         }
-
-        // End of whitespace
-        WhitespaceChars = WhitespaceBuilder.AsSpan();
 
         // Found quoteless string if found backslash or non-reserved char
         return Peek() is char NextChar && (NextChar is '\\' || !ReservedChars.Contains(NextChar));
@@ -1206,8 +1199,10 @@ public sealed partial class JsonhReader : IDisposable {
         // Read number
         if (ReadNumber(out ReadOnlySpan<char> PartialCharsRead).TryGetValue(out JsonhToken Number)) {
             // Try read quoteless string starting with number
-            if (DetectQuotelessString(out ReadOnlySpan<char> WhitespaceChars)) {
-                return ReadQuotelessString(string.Concat(Number.Value, WhitespaceChars));
+            ValueStringBuilder WhitespaceBuilder = new(stackalloc char[64]);
+            using ValueStringBuilder ReadOnlyWhitespaceBuilder = WhitespaceBuilder; // Can't pass using variables by-ref
+            if (DetectQuotelessString(ref WhitespaceBuilder)) {
+                return ReadQuotelessString(string.Concat(Number.Value, WhitespaceBuilder.AsSpan()));
             }
             // Otherwise, accept number
             else {
