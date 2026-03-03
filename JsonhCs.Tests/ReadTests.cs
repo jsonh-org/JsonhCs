@@ -53,26 +53,4 @@ public class ReadTests {
 
         Tokens2[1].IsError.ShouldBeTrue();
     }
-    [Fact]
-    public void FindPropertyValueTest() {
-
-    }
-    [Fact]
-    public void InsertPropertyTest() {
-        string Jsonh = """
-            {
-              a: { b: c }
-              d: {
-                e: f
-              }
-            }
-            """;
-
-        string InsertPropertyResult = JsonhReader.InsertProperty(Jsonh, "g", "g: h").Value;
-        _ = InsertPropertyResult;
-
-
-        string InsertPropertyResult2 = JsonhReader.InsertProperty(Jsonh, "d", "d: e").Value;
-        _ = InsertPropertyResult2;
-    }
 }
