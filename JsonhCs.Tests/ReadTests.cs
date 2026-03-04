@@ -92,5 +92,36 @@ public class ReadTests {
         Reader2.ParseJson(IncludeComments: true).Value.ShouldBe("""
             {/* Hello / * test * / world*/"a":"b","c":"私","x":["a","b","c"],"y":{},"z":0.5}
             """);
+
+        using JsonhReader Reader3 = new(Jsonh);
+        Reader3.ParseJson(Indent: "  ").Value.ShouldBe("""
+            {
+              "a": "b",
+              "c": "私",
+              "x": [
+                "a",
+                "b",
+                "c"
+              ],
+              "y": {},
+              "z": 0.5
+            }
+            """);
+
+        using JsonhReader Reader4 = new(Jsonh);
+        Reader4.ParseJson(IncludeComments: true, Indent: "  ").Value.ShouldBe("""
+            {
+              /* Hello / * test * / world*/
+              "a": "b",
+              "c": "私",
+              "x": [
+                "a",
+                "b",
+                "c"
+              ],
+              "y": {},
+              "z": 0.5
+            }
+            """);
     }
 }

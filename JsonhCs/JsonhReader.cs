@@ -321,11 +321,12 @@ public sealed partial class JsonhReader : IDisposable {
         return NextElement;
     }
     /// <summary>
-    /// Parses a single element as minified JSON from the reader.<br/><br/>
-    /// If <paramref name="IncludeComments"/> is true, comments are included (<c>/*</c> and <c>*/</c> are escaped as <c>/ *</c> and <c>* /</c>).<br/><br/>
+    /// Parses a single element as JSON from the reader.<br/><br/>
+    /// If <paramref name="IncludeComments"/> is true, comments are included (<c>/*</c> and <c>*/</c> are escaped as <c>/ *</c> and <c>* /</c>).<br/>
+    /// If <paramref name="Indent"/> is not null, the output is pretty-printed with the given indentation.<br/><br/>
     /// The result is not safe to embed in HTML.
     /// </summary>
-    public Result<string> ParseJson(bool IncludeComments = false) {
+    public Result<string> ParseJson(bool IncludeComments = false, string? Indent = null) {
         long CurrentDepth = 0;
         bool IsStartOfStructure = true;
         bool IsPropertyValue = false;
@@ -338,19 +339,48 @@ public sealed partial class JsonhReader : IDisposable {
                 return Error;
             }
 
-            if (Token.JsonType is JsonTokenType.Null or JsonTokenType.True or JsonTokenType.False or JsonTokenType.String or JsonTokenType.Number or JsonTokenType.StartObject or JsonTokenType.StartArray or JsonTokenType.PropertyName) {
-                if (!IsPropertyValue) {
-                    if (!IsStartOfStructure) {
+            // Add comments and indents
+            if (!IsPropertyValue) {
+                // Add comma before property/item
+                if (Token.JsonType is not (JsonTokenType.None or JsonTokenType.Comment) && CurrentDepth > 0 && !IsStartOfStructure) {
+                    // Don't add trailing comma
+                    if (Token.JsonType is not (JsonTokenType.EndObject or JsonTokenType.EndArray)) {
                         ResultBuilder.Append(',');
                     }
-                    IsStartOfStructure = false;
                 }
+
+                // Apply indentation
+                if (Indent is not null) {
+                    // Don't indent inside empty structures
+                    if (!(Token.JsonType is JsonTokenType.EndObject or JsonTokenType.EndArray && IsStartOfStructure)) {
+                        // Don't indent comment if not included
+                        if (!(Token.JsonType is JsonTokenType.Comment && !IncludeComments)) {
+                            // Don't indent root elements
+                            if (CurrentDepth > 0) {
+                                // Add newline before element
+                                ResultBuilder.Append('\n');
+
+                                // Get current indent count
+                                long IndentCount = CurrentDepth;
+                                if (Token.JsonType is JsonTokenType.EndObject or JsonTokenType.EndArray) {
+                                    IndentCount--;
+                                }
+
+                                // Add indent
+                                for (long Counter = 0; Counter < IndentCount; Counter++) {
+                                    ResultBuilder.Append(Indent);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // Track start of structure to avoid adding leading comma
+            if (Token.JsonType is not (JsonTokenType.None or JsonTokenType.Comment)) {
+                IsStartOfStructure = false;
             }
             if (Token.JsonType is JsonTokenType.StartObject or JsonTokenType.StartArray) {
                 IsStartOfStructure = true;
-            }
-            else if (Token.JsonType is JsonTokenType.EndObject or JsonTokenType.EndArray) {
-                IsStartOfStructure = false;
             }
 
             switch (Token.JsonType) {
@@ -439,6 +469,9 @@ public sealed partial class JsonhReader : IDisposable {
                 case JsonTokenType.PropertyName: {
                     ResultBuilder.Append(JsonValue.Create(Token.Value).ToJsonString(MiniJson));
                     ResultBuilder.Append(':');
+                    if (Indent is not null) {
+                        ResultBuilder.Append(' ');
+                    }
                     break;
                 }
                 // Comment
