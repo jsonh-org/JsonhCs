@@ -33,12 +33,12 @@ partial class JsonhReader {
     /// <item>Always writes newlines as <c>\n</c></item>
     /// <item>Allows but skips comments</item>
     /// <item>Uses relaxed JSON escaping</item>
-    /// <item>Writes indents as tabs</item>
+    /// <item>Writes indents as four spaces</item>
     /// </list>
     /// </summary>
     public static JsonSerializerOptions PrettyJson { get; } = new(MiniJson) {
         WriteIndented = true,
-        IndentCharacter = '\t',
-        IndentSize = 1,
+        IndentCharacter = ' ',
+        IndentSize = 4,
     };
 }
