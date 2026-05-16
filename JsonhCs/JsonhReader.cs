@@ -324,7 +324,7 @@ public sealed partial class JsonhReader : IDisposable {
     /// Parses a single element as JSON from the reader.<br/><br/>
     /// If <paramref name="IncludeComments"/> is true, comments are included (<c>/*</c> and <c>*/</c> are escaped as <c>/ *</c> and <c>* /</c>).<br/>
     /// If <paramref name="Indent"/> is not null, the output is pretty-printed with the given indentation.<br/><br/>
-    /// The result is not safe to embed in HTML.
+    /// Note: The result is <b>NOT</b> safe to embed in HTML. To safely embed in HTML, you need to escape characters like <c>&lt;</c>, <c>&gt;</c> and <c>&amp;</c>.
     /// </summary>
     public Result<string> ParseJson(bool IncludeComments = false, string? Indent = null) {
         long CurrentDepth = 0;
