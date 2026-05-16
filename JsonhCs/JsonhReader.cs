@@ -490,7 +490,9 @@ public sealed partial class JsonhReader : IDisposable {
                     }
                 }
 
-                IsPropertyValue = Token.JsonType is JsonTokenType.PropertyName;
+                if (Token.JsonType is not JsonTokenType.Comment) {
+                    IsPropertyValue = Token.JsonType is JsonTokenType.PropertyName;
+                }
             }
 
             // End of input

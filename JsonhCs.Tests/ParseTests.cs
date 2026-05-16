@@ -251,5 +251,14 @@ public class ParseTests {
             ParseSingleElement = true,
         });
         Reader6.ParseJson().IsError.ShouldBeTrue();
+
+        string Jsonh3 = """
+            a: /*b*/ c
+            """;
+
+        using JsonhReader Reader7 = new(Jsonh3, new JsonhReaderOptions() {
+            ParseSingleElement = false,
+        });
+        Reader7.ParseJson().Value.ShouldBe("{\"a\":\"c\"}");
     }
 }
