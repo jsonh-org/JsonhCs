@@ -327,7 +327,7 @@ public sealed partial class JsonhReader : IDisposable {
     /// Note: The result is <b>NOT</b> safe to embed in HTML. To safely embed in HTML, you need to escape characters like <c>&lt;</c>, <c>&gt;</c> and <c>&amp;</c>.
     /// </summary>
     public Result<string> ParseJson(bool IncludeComments = false, string? Indent = null) {
-        Result<string> ParseNextElement() {
+        Result<string> ParseNextElementAsJson() {
             long CurrentDepth = 0;
             bool IsStartOfStructure = true;
             bool IsPropertyValue = false;
@@ -497,11 +497,11 @@ public sealed partial class JsonhReader : IDisposable {
             return new Error("Expected token, got end of input");
         }
 
-        // Parse next element
-        Result<string> NextElement = ParseNextElement();
+        // Parse next element as JSON
+        Result<string> NextElementAsJson = ParseNextElementAsJson();
 
         // Ensure exactly one element
-        if (NextElement.IsValue) {
+        if (NextElementAsJson.IsValue) {
             if (Options.ParseSingleElement) {
                 foreach (Result<JsonhToken> Token in ReadEndOfElements()) {
                     if (Token.IsError) {
@@ -511,7 +511,7 @@ public sealed partial class JsonhReader : IDisposable {
             }
         }
 
-        return NextElement;
+        return NextElementAsJson;
     }
     /// <summary>
     /// Tries to find the given property name in the reader.<br/>
