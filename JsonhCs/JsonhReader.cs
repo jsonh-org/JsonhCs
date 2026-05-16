@@ -331,169 +331,187 @@ public sealed partial class JsonhReader : IDisposable {
         bool IsStartOfStructure = true;
         bool IsPropertyValue = false;
 
-        using ValueStringBuilder ResultBuilder = new(stackalloc char[64]);
+        Result<string> ParseNextElement() {
+            using ValueStringBuilder ResultBuilder = new(stackalloc char[64]);
 
-        foreach (Result<JsonhToken> TokenResult in ReadElement()) {
-            // Check error
-            if (!TokenResult.TryGetValue(out JsonhToken Token, out Error Error)) {
-                return Error;
-            }
-
-            // Add comments and indents
-            if (!IsPropertyValue) {
-                // Add comma before property/item
-                if (Token.JsonType is not (JsonTokenType.None or JsonTokenType.Comment) && CurrentDepth > 0 && !IsStartOfStructure) {
-                    // Don't add trailing comma
-                    if (Token.JsonType is not (JsonTokenType.EndObject or JsonTokenType.EndArray)) {
-                        ResultBuilder.Append(',');
-                    }
+            foreach (Result<JsonhToken> TokenResult in ReadElement()) {
+                // Check error
+                if (!TokenResult.TryGetValue(out JsonhToken Token, out Error Error)) {
+                    return Error;
                 }
 
-                // Apply indentation
-                if (Indent is not null) {
-                    // Don't indent inside empty structures
-                    if (!(Token.JsonType is JsonTokenType.EndObject or JsonTokenType.EndArray && IsStartOfStructure)) {
-                        // Don't indent comment if not included
-                        if (!(Token.JsonType is JsonTokenType.Comment && !IncludeComments)) {
-                            // Don't indent root elements
-                            if (CurrentDepth > 0) {
-                                // Add newline before element
-                                ResultBuilder.Append('\n');
+                // Add comments and indents
+                if (!IsPropertyValue) {
+                    // Add comma before property/item
+                    if (Token.JsonType is not (JsonTokenType.None or JsonTokenType.Comment) && CurrentDepth > 0 && !IsStartOfStructure) {
+                        // Don't add trailing comma
+                        if (Token.JsonType is not (JsonTokenType.EndObject or JsonTokenType.EndArray)) {
+                            ResultBuilder.Append(',');
+                        }
+                    }
 
-                                // Get current indent count
-                                long IndentCount = CurrentDepth;
-                                if (Token.JsonType is JsonTokenType.EndObject or JsonTokenType.EndArray) {
-                                    IndentCount--;
-                                }
+                    // Apply indentation
+                    if (Indent is not null) {
+                        // Don't indent inside empty structures
+                        if (!(Token.JsonType is JsonTokenType.EndObject or JsonTokenType.EndArray && IsStartOfStructure)) {
+                            // Don't indent comment if not included
+                            if (!(Token.JsonType is JsonTokenType.Comment && !IncludeComments)) {
+                                // Don't indent root elements
+                                if (CurrentDepth > 0) {
+                                    // Add newline before element
+                                    ResultBuilder.Append('\n');
 
-                                // Add indent
-                                for (long Counter = 0; Counter < IndentCount; Counter++) {
-                                    ResultBuilder.Append(Indent);
+                                    // Get current indent count
+                                    long IndentCount = CurrentDepth;
+                                    if (Token.JsonType is JsonTokenType.EndObject or JsonTokenType.EndArray) {
+                                        IndentCount--;
+                                    }
+
+                                    // Add indent
+                                    for (long Counter = 0; Counter < IndentCount; Counter++) {
+                                        ResultBuilder.Append(Indent);
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
-            // Track start of structure to avoid adding leading comma
-            if (Token.JsonType is not (JsonTokenType.None or JsonTokenType.Comment)) {
-                IsStartOfStructure = false;
-            }
-            if (Token.JsonType is JsonTokenType.StartObject or JsonTokenType.StartArray) {
-                IsStartOfStructure = true;
+                // Track start of structure to avoid adding leading comma
+                if (Token.JsonType is not (JsonTokenType.None or JsonTokenType.Comment)) {
+                    IsStartOfStructure = false;
+                }
+                if (Token.JsonType is JsonTokenType.StartObject or JsonTokenType.StartArray) {
+                    IsStartOfStructure = true;
+                }
+
+                switch (Token.JsonType) {
+                    // Null
+                    case JsonTokenType.Null: {
+                        ResultBuilder.Append("null");
+                        if (CurrentDepth == 0) {
+                            return ResultBuilder.ToString();
+                        }
+                        break;
+                    }
+                    // True
+                    case JsonTokenType.True: {
+                        ResultBuilder.Append("true");
+                        if (CurrentDepth == 0) {
+                            return ResultBuilder.ToString();
+                        }
+                        break;
+                    }
+                    // False
+                    case JsonTokenType.False: {
+                        ResultBuilder.Append("false");
+                        if (CurrentDepth == 0) {
+                            return ResultBuilder.ToString();
+                        }
+                        break;
+                    }
+                    // String
+                    case JsonTokenType.String: {
+                        ResultBuilder.Append(JsonValue.Create(Token.Value).ToJsonString(MiniJson));
+                        if (CurrentDepth == 0) {
+                            return ResultBuilder.ToString();
+                        }
+                        break;
+                    }
+                    // Number
+                    case JsonTokenType.Number: {
+                        if (Options.BigNumbers) {
+                            if (JsonhNumberParserBig.Parse(Token.Value).TryGetError(out Error NumberError, out BigReal Number)) {
+                                return NumberError;
+                            }
+                            ResultBuilder.Append(Number, formatProvider: CultureInfo.InvariantCulture);
+                        }
+                        else {
+                            if (JsonhNumberParser.Parse(Token.Value).TryGetError(out Error NumberError, out double Number)) {
+                                return NumberError;
+                            }
+                            ResultBuilder.Append(Number, formatProvider: CultureInfo.InvariantCulture);
+                        }
+                        if (CurrentDepth == 0) {
+                            return ResultBuilder.ToString();
+                        }
+                        break;
+                    }
+                    // Start Object
+                    case JsonTokenType.StartObject: {
+                        ResultBuilder.Append('{');
+                        CurrentDepth++;
+                        break;
+                    }
+                    // Start Array
+                    case JsonTokenType.StartArray: {
+                        ResultBuilder.Append('[');
+                        CurrentDepth++;
+                        break;
+                    }
+                    // End Object
+                    case JsonTokenType.EndObject: {
+                        ResultBuilder.Append('}');
+                        CurrentDepth--;
+                        if (CurrentDepth == 0) {
+                            return ResultBuilder.ToString();
+                        }
+                        break;
+                    }
+                    // End Array
+                    case JsonTokenType.EndArray: {
+                        ResultBuilder.Append(']');
+                        CurrentDepth--;
+                        if (CurrentDepth == 0) {
+                            return ResultBuilder.ToString();
+                        }
+                        break;
+                    }
+                    // Property Name
+                    case JsonTokenType.PropertyName: {
+                        ResultBuilder.Append(JsonValue.Create(Token.Value).ToJsonString(MiniJson));
+                        ResultBuilder.Append(':');
+                        if (Indent is not null) {
+                            ResultBuilder.Append(' ');
+                        }
+                        break;
+                    }
+                    // Comment
+                    case JsonTokenType.Comment: {
+                        if (IncludeComments) {
+                            ResultBuilder.Append("/*");
+                            ResultBuilder.Append(Token.Value.Replace("/*", "/ *", StringComparison.Ordinal).Replace("*/", "* /", StringComparison.Ordinal));
+                            ResultBuilder.Append("*/");
+                        }
+                        break;
+                    }
+                    // Not implemented
+                    default: {
+                        throw new NotImplementedException(Token.JsonType.ToString());
+                    }
+                }
+
+                IsPropertyValue = Token.JsonType is JsonTokenType.PropertyName;
             }
 
-            switch (Token.JsonType) {
-                // Null
-                case JsonTokenType.Null: {
-                    ResultBuilder.Append("null");
-                    if (CurrentDepth == 0) {
-                        return ResultBuilder.ToString();
-                    }
-                    break;
-                }
-                // True
-                case JsonTokenType.True: {
-                    ResultBuilder.Append("true");
-                    if (CurrentDepth == 0) {
-                        return ResultBuilder.ToString();
-                    }
-                    break;
-                }
-                // False
-                case JsonTokenType.False: {
-                    ResultBuilder.Append("false");
-                    if (CurrentDepth == 0) {
-                        return ResultBuilder.ToString();
-                    }
-                    break;
-                }
-                // String
-                case JsonTokenType.String: {
-                    ResultBuilder.Append(JsonValue.Create(Token.Value).ToJsonString(MiniJson));
-                    if (CurrentDepth == 0) {
-                        return ResultBuilder.ToString();
-                    }
-                    break;
-                }
-                // Number
-                case JsonTokenType.Number: {
-                    if (Options.BigNumbers) {
-                        if (JsonhNumberParserBig.Parse(Token.Value).TryGetError(out Error NumberError, out BigReal Number)) {
-                            return NumberError;
-                        }
-                        ResultBuilder.Append(Number, formatProvider: CultureInfo.InvariantCulture);
-                    }
-                    else {
-                        if (JsonhNumberParser.Parse(Token.Value).TryGetError(out Error NumberError, out double Number)) {
-                            return NumberError;
-                        }
-                        ResultBuilder.Append(Number, formatProvider: CultureInfo.InvariantCulture);
-                    }
-                    if (CurrentDepth == 0) {
-                        return ResultBuilder.ToString();
-                    }
-                    break;
-                }
-                // Start Object
-                case JsonTokenType.StartObject: {
-                    ResultBuilder.Append('{');
-                    CurrentDepth++;
-                    break;
-                }
-                // Start Array
-                case JsonTokenType.StartArray: {
-                    ResultBuilder.Append('[');
-                    CurrentDepth++;
-                    break;
-                }
-                // End Object
-                case JsonTokenType.EndObject: {
-                    ResultBuilder.Append('}');
-                    CurrentDepth--;
-                    if (CurrentDepth == 0) {
-                        return ResultBuilder.ToString();
-                    }
-                    break;
-                }
-                // End Array
-                case JsonTokenType.EndArray: {
-                    ResultBuilder.Append(']');
-                    CurrentDepth--;
-                    if (CurrentDepth == 0) {
-                        return ResultBuilder.ToString();
-                    }
-                    break;
-                }
-                // Property Name
-                case JsonTokenType.PropertyName: {
-                    ResultBuilder.Append(JsonValue.Create(Token.Value).ToJsonString(MiniJson));
-                    ResultBuilder.Append(':');
-                    if (Indent is not null) {
-                        ResultBuilder.Append(' ');
-                    }
-                    break;
-                }
-                // Comment
-                case JsonTokenType.Comment: {
-                    if (IncludeComments) {
-                        ResultBuilder.Append("/*");
-                        ResultBuilder.Append(Token.Value.Replace("/*", "/ *", StringComparison.Ordinal).Replace("*/", "* /", StringComparison.Ordinal));
-                        ResultBuilder.Append("*/");
-                    }
-                    break;
-                }
-                // Not implemented
-                default: {
-                    throw new NotImplementedException(Token.JsonType.ToString());
-                }
-            }
-
-            IsPropertyValue = Token.JsonType is JsonTokenType.PropertyName;
+            // End of input
+            return new Error("Expected token, got end of input");
         }
 
-        // End of input
-        return new Error("Expected token, got end of input");
+        // Parse next element
+        Result<string> NextElement = ParseNextElement();
+
+        // Ensure exactly one element
+        if (NextElement.IsValue) {
+            if (Options.ParseSingleElement) {
+                foreach (Result<JsonhToken> Token in ReadEndOfElements()) {
+                    if (Token.IsError) {
+                        return Token.Error;
+                    }
+                }
+            }
+        }
+
+        return NextElement;
     }
     /// <summary>
     /// Tries to find the given property name in the reader.<br/>

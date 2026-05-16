@@ -183,4 +183,73 @@ public class ParseTests {
             MaxDepth = 3,
         }).IsError.ShouldBeFalse();
     }
+    [Fact]
+    public void ParseJsonTest() {
+        string Jsonh = """
+            {
+              // Hello /* test */ world
+              a: 'b'
+              "c": '''私'''
+              x: [a,b,c]
+              y: {}
+              z: 0.05e1
+            }
+            """;
+
+        using JsonhReader Reader = new(Jsonh);
+        Reader.ParseJson().Value.ShouldBe("""
+            {"a":"b","c":"私","x":["a","b","c"],"y":{},"z":0.5}
+            """);
+
+        using JsonhReader Reader2 = new(Jsonh);
+        Reader2.ParseJson(IncludeComments: true).Value.ShouldBe("""
+            {/* Hello / * test * / world*/"a":"b","c":"私","x":["a","b","c"],"y":{},"z":0.5}
+            """);
+
+        using JsonhReader Reader3 = new(Jsonh);
+        Reader3.ParseJson(Indent: "  ").Value.ShouldBe("""
+            {
+              "a": "b",
+              "c": "私",
+              "x": [
+                "a",
+                "b",
+                "c"
+              ],
+              "y": {},
+              "z": 0.5
+            }
+            """);
+
+        using JsonhReader Reader4 = new(Jsonh);
+        Reader4.ParseJson(IncludeComments: true, Indent: "  ").Value.ShouldBe("""
+            {
+              /* Hello / * test * / world*/
+              "a": "b",
+              "c": "私",
+              "x": [
+                "a",
+                "b",
+                "c"
+              ],
+              "y": {},
+              "z": 0.5
+            }
+            """);
+
+        string Jsonh2 = """
+            1
+            2
+            """;
+
+        using JsonhReader Reader5 = new(Jsonh2, new JsonhReaderOptions() {
+            ParseSingleElement = false,
+        });
+        Reader5.ParseJson().Value.ShouldBe("1");
+
+        using JsonhReader Reader6 = new(Jsonh2, new JsonhReaderOptions() {
+            ParseSingleElement = true,
+        });
+        Reader6.ParseJson().IsError.ShouldBeTrue();
+    }
 }
