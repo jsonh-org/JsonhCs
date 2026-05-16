@@ -327,11 +327,11 @@ public sealed partial class JsonhReader : IDisposable {
     /// Note: The result is <b>NOT</b> safe to embed in HTML. To safely embed in HTML, you need to escape characters like <c>&lt;</c>, <c>&gt;</c> and <c>&amp;</c>.
     /// </summary>
     public Result<string> ParseJson(bool IncludeComments = false, string? Indent = null) {
-        long CurrentDepth = 0;
-        bool IsStartOfStructure = true;
-        bool IsPropertyValue = false;
-
         Result<string> ParseNextElement() {
+            long CurrentDepth = 0;
+            bool IsStartOfStructure = true;
+            bool IsPropertyValue = false;
+
             using ValueStringBuilder ResultBuilder = new(stackalloc char[64]);
 
             foreach (Result<JsonhToken> TokenResult in ReadElement()) {
