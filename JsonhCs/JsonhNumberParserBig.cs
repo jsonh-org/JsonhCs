@@ -107,7 +107,7 @@ public static class JsonhNumberParserBig {
         }
 
         // Multiply mantissa by 10 ^ exponent
-        return Mantissa * BigReal.Pow(10, Exponent, Decimals);
+        return Mantissa * BigReal.Pow(BigReal.Ten, Exponent, Decimals);
     }
     /// <summary>
     /// Converts a fractional number (e.g. <c>123.45</c>) from the given base (e.g. <c>01234567</c>) to a base-10 real.
