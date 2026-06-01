@@ -1190,14 +1190,13 @@ public sealed partial class JsonhReader : IDisposable {
 
         // Match named literal
         if (IsNamedLiteralPossible) {
-            if (StringBuilder.Equals("null")) {
-                return new JsonhToken(JsonTokenType.Null, "null");
-            }
-            else if (StringBuilder.Equals("true")) {
-                return new JsonhToken(JsonTokenType.True, "true");
-            }
-            else if (StringBuilder.Equals("false")) {
-                return new JsonhToken(JsonTokenType.False, "false");
+            switch (StringBuilder.AsSpan()) {
+                case "null":
+                    return new JsonhToken(JsonTokenType.Null, "null");
+                case "true":
+                    return new JsonhToken(JsonTokenType.True, "true");
+                case "false":
+                    return new JsonhToken(JsonTokenType.False, "false");
             }
         }
 
