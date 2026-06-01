@@ -1181,7 +1181,7 @@ public sealed partial class JsonhReader : IDisposable {
         }
 
         // Ensure not empty
-        if (StringBuilder.AsSpan().IsEmpty) {
+        if (StringBuilder.IsEmpty) {
             return new Error("Empty quoteless string");
         }
 
