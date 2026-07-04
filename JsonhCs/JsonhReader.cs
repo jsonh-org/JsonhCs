@@ -18,7 +18,13 @@ public sealed partial class JsonhReader : IDisposable {
     /// <summary>
     /// The text reader to read characters from.
     /// </summary>
-    public TextReader TextReader { get; set; }
+    public TextReader TextReader {
+        get;
+        set {
+            ArgumentNullException.ThrowIfNull(value);
+            field = value;
+        }
+    }
     /// <summary>
     /// The options to use when reading JSONH.
     /// </summary>
@@ -66,6 +72,8 @@ public sealed partial class JsonhReader : IDisposable {
     /// Constructs a reader that reads JSONH from a text reader.
     /// </summary>
     public JsonhReader(TextReader TextReader, JsonhReaderOptions? Options = null) {
+        ArgumentNullException.ThrowIfNull(TextReader);
+
         this.TextReader = TextReader;
         this.Options = Options ?? new JsonhReaderOptions();
     }
