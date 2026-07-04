@@ -48,6 +48,14 @@ public sealed partial class JsonhReader : IDisposable {
     /// Characters that are considered newlines.
     /// </summary>
     private static readonly SearchValues<char> NewlineChars = SearchValues.Create(['\n', '\r', '\u2028', '\u2029']);
+    /// <summary>
+    /// Characters that are considered whitespace.
+    /// </summary>
+    private static readonly SearchValues<char> WhitespaceChars = SearchValues.Create([
+        '\u0020', '\u00A0', '\u1680', '\u2000', '\u2001', '\u2002', '\u2003', '\u2004', '\u2005',
+        '\u2006', '\u2007', '\u2008', '\u2009', '\u200A', '\u202F', '\u205F', '\u3000', '\u2028',
+        '\u2029', '\u0009', '\u000A', '\u000B', '\u000C', '\u000D', '\u0085',
+    ]);
 
     /// <summary>
     /// Warning message for dynamic serialization.
@@ -962,7 +970,7 @@ public sealed partial class JsonhReader : IDisposable {
 
             // Ensure string immediately follows verbatim symbol
             char? Next = Peek();
-            if (Next is null || Next is '#' or '/' || char.IsWhiteSpace(Next.Value)) {
+            if (Next is null || Next is '#' or '/' || WhitespaceChars.Contains(Next.Value)) {
                 return new Error("Expected string to immediately follow verbatim symbol");
             }
         }
@@ -1046,7 +1054,7 @@ public sealed partial class JsonhReader : IDisposable {
                     break;
                 }
                 // Non-whitespace
-                else if (!char.IsWhiteSpace(Next)) {
+                else if (!WhitespaceChars.Contains(Next)) {
                     break;
                 }
             }
@@ -1072,7 +1080,7 @@ public sealed partial class JsonhReader : IDisposable {
                         }
                     }
                     // Whitespace
-                    else if (char.IsWhiteSpace(Next)) {
+                    else if (WhitespaceChars.Contains(Next)) {
                         TrailingWhitespaceCounter++;
                     }
                     // Non-whitespace
@@ -1104,7 +1112,7 @@ public sealed partial class JsonhReader : IDisposable {
                                 LineLeadingWhitespaceCounter = 0;
                             }
                             // Whitespace
-                            else if (char.IsWhiteSpace(Next)) {
+                            else if (WhitespaceChars.Contains(Next)) {
                                 if (IsLineLeadingWhitespace) {
                                     // Increment line-leading whitespace
                                     LineLeadingWhitespaceCounter++;
@@ -1217,7 +1225,7 @@ public sealed partial class JsonhReader : IDisposable {
             }
 
             // End of whitespace
-            if (!char.IsWhiteSpace(Next)) {
+            if (!WhitespaceChars.Contains(Next)) {
                 break;
             }
 
@@ -1538,7 +1546,7 @@ public sealed partial class JsonhReader : IDisposable {
             }
 
             // Whitespace
-            if (char.IsWhiteSpace(Next)) {
+            if (WhitespaceChars.Contains(Next)) {
                 Read();
             }
             // End of whitespace
