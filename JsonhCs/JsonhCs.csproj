@@ -45,7 +45,7 @@
 
   <ItemGroup>
     <PackageReference Include="BigReal" Version="6.0.0" />
-    <PackageReference Include="System.Text.Json" Version="10.0.10" />
+    <PackageReference Include="System.Text.Json" Version="10.0.11" />
     <PackageReference Include="LinkDotNet.StringBuilder" Version="3.4.2" />
     <PackageReference Include="ResultZero" Version="3.1.0" />
   </ItemGroup>
