@@ -580,7 +580,8 @@ public sealed partial class JsonhReader : IDisposable {
         return false;
     }
     /// <summary>
-    /// Reads whitespace and returns whether the reader contains another token.
+    /// Reads whitespace and returns whether the reader contains another token.<br/><br/>
+    /// Note: This can be used to skip whitespace without skipping comments.
     /// </summary>
     public bool HasToken() {
         // Whitespace
