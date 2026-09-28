@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <VersionPrefix>7.9</VersionPrefix>
-    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <TargetFrameworks>net10.0</TargetFrameworks>
     <LangVersion>latest</LangVersion>
     <RootNamespace>JsonhCs</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -45,7 +45,6 @@
 
   <ItemGroup>
     <PackageReference Include="BigReal" Version="6.0.0" />
-    <PackageReference Include="System.Text.Json" Version="10.0.12" />
     <PackageReference Include="LinkDotNet.StringBuilder" Version="3.7.1" />
     <PackageReference Include="ResultZero" Version="3.1.0" />
   </ItemGroup>
