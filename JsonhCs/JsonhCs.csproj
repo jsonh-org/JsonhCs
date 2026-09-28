@@ -14,15 +14,15 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <IsAotCompatible>True</IsAotCompatible>
-    <IsTrimmable>True</IsTrimmable>
+    <IsAotCompatible>true</IsAotCompatible>
+    <IsTrimmable>true</IsTrimmable>
   </PropertyGroup>
 
   <PropertyGroup>
-    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
-    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Title>JSONH</Title>
     <Description>JSON for Humans.</Description>
     <PackageProjectUrl>https://github.com/jsonh-org/JsonhCs</PackageProjectUrl>
