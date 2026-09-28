@@ -1,5 +1,4 @@
 using ExtendedNumerics;
-using LinkDotNet.StringBuilder;
 using ResultZero;
 using System.Buffers;
 using System.Diagnostics;
@@ -348,7 +347,7 @@ public sealed partial class JsonhReader : IDisposable {
             bool IsStartOfStructure = true;
             bool IsPropertyValue = false;
 
-            using ValueStringBuilder ResultBuilder = new(stackalloc char[64]);
+            using SimpleValueStringBuilder ResultBuilder = new(stackalloc char[64]);
 
             foreach (Result<JsonhToken> TokenResult in ReadElement()) {
                 // Check error
@@ -439,13 +438,13 @@ public sealed partial class JsonhReader : IDisposable {
                             if (JsonhNumberParserBig.Parse(Token.Value).TryGetError(out Error NumberError, out BigReal Number)) {
                                 return NumberError;
                             }
-                            ResultBuilder.Append(Number, formatProvider: CultureInfo.InvariantCulture);
+                            ResultBuilder.Append(Number, FormatProvider: CultureInfo.InvariantCulture);
                         }
                         else {
                             if (JsonhNumberParser.Parse(Token.Value).TryGetError(out Error NumberError, out double Number)) {
                                 return NumberError;
                             }
-                            ResultBuilder.Append(Number, formatProvider: CultureInfo.InvariantCulture);
+                            ResultBuilder.Append(Number, FormatProvider: CultureInfo.InvariantCulture);
                         }
                         if (CurrentDepth == 0) {
                             return ResultBuilder.ToString();
@@ -1004,8 +1003,8 @@ public sealed partial class JsonhReader : IDisposable {
         int EndQuoteCounter = 0;
 
         // Read string
-        ValueStringBuilder StringBuilder = new(stackalloc char[64]);
-        using ValueStringBuilder ReadOnlyStringBuilder = StringBuilder; // Can't pass using variables by-ref
+        SimpleValueStringBuilder StringBuilder = new(stackalloc char[64]);
+        using SimpleValueStringBuilder ReadOnlyStringBuilder = StringBuilder; // Can't pass using variables by-ref
 
         while (true) {
             if (Read() is not char Next) {
@@ -1159,8 +1158,8 @@ public sealed partial class JsonhReader : IDisposable {
         bool IsNamedLiteralPossible = !IsVerbatim;
 
         // Read quoteless string
-        ValueStringBuilder StringBuilder = new(stackalloc char[64]);
-        using ValueStringBuilder ReadOnlyStringBuilder = StringBuilder; // Can't pass using variables by-ref
+        SimpleValueStringBuilder StringBuilder = new(stackalloc char[64]);
+        using SimpleValueStringBuilder ReadOnlyStringBuilder = StringBuilder; // Can't pass using variables by-ref
         StringBuilder.Append(InitialChars);
 
         while (true) {
@@ -1198,7 +1197,7 @@ public sealed partial class JsonhReader : IDisposable {
         }
 
         // Ensure not empty
-        if (StringBuilder.IsEmpty) {
+        if (StringBuilder.Length == 0) {
             return new Error("Empty quoteless string");
         }
 
@@ -1220,7 +1219,7 @@ public sealed partial class JsonhReader : IDisposable {
         // End of quoteless string
         return new JsonhToken(JsonTokenType.String, StringBuilder.ToString());
     }
-    private bool DetectQuotelessString(ref ValueStringBuilder WhitespaceBuilder) {
+    private bool DetectQuotelessString(ref SimpleValueStringBuilder WhitespaceBuilder) {
         while (true) {
             // Peek char
             if (Peek() is not char Next) {
@@ -1248,8 +1247,8 @@ public sealed partial class JsonhReader : IDisposable {
     }
     private Result<JsonhToken> ReadNumber(out ReadOnlySpan<char> PartialCharsRead) {
         // Read number
-        ValueStringBuilder NumberBuilder = new(stackalloc char[64]);
-        using ValueStringBuilder ReadOnlyNumberBuilder = NumberBuilder; // Can't pass using variables by-ref
+        SimpleValueStringBuilder NumberBuilder = new(stackalloc char[64]);
+        using SimpleValueStringBuilder ReadOnlyNumberBuilder = NumberBuilder; // Can't pass using variables by-ref
 
         // Read sign
         if (ReadAny('-', '+') is char Sign) {
@@ -1329,7 +1328,7 @@ public sealed partial class JsonhReader : IDisposable {
         PartialCharsRead = default;
         return new JsonhToken(JsonTokenType.Number, NumberBuilder.ToString());
     }
-    private Result ReadNumberNoExponent(scoped ref ValueStringBuilder NumberBuilder, scoped ReadOnlySpan<char> BaseDigits, bool HasBaseSpecifier = false, bool HasLeadingZero = false) {
+    private Result ReadNumberNoExponent(scoped ref SimpleValueStringBuilder NumberBuilder, scoped ReadOnlySpan<char> BaseDigits, bool HasBaseSpecifier = false, bool HasLeadingZero = false) {
         // Leading underscore
         if (!HasBaseSpecifier && !HasLeadingZero && Peek() is '_') {
             return new Error("Leading `_` in number");
@@ -1411,8 +1410,8 @@ public sealed partial class JsonhReader : IDisposable {
         // Read number
         if (ReadNumber(out ReadOnlySpan<char> PartialCharsRead).TryGetValue(out JsonhToken Number)) {
             // Try read quoteless string starting with number
-            ValueStringBuilder WhitespaceBuilder = new(stackalloc char[64]);
-            using ValueStringBuilder ReadOnlyWhitespaceBuilder = WhitespaceBuilder; // Can't pass using variables by-ref
+            SimpleValueStringBuilder WhitespaceBuilder = new(stackalloc char[64]);
+            using SimpleValueStringBuilder ReadOnlyWhitespaceBuilder = WhitespaceBuilder; // Can't pass using variables by-ref
             if (DetectQuotelessString(ref WhitespaceBuilder)) {
                 return ReadQuotelessString(string.Concat(Number.Value, WhitespaceBuilder.AsSpan()));
             }
@@ -1499,7 +1498,7 @@ public sealed partial class JsonhReader : IDisposable {
         }
 
         // Read comment
-        using ValueStringBuilder CommentBuilder = new(stackalloc char[64]);
+        using SimpleValueStringBuilder CommentBuilder = new(stackalloc char[64]);
 
         while (true) {
             // Read char
@@ -1594,7 +1593,7 @@ public sealed partial class JsonhReader : IDisposable {
         // Return aggregated value
         return Value;
     }
-    private Result ReadEscapeSequence(scoped ref ValueStringBuilder StringBuilder) {
+    private Result ReadEscapeSequence(scoped ref SimpleValueStringBuilder StringBuilder) {
         if (Read() is not char EscapeChar) {
             return new Error("Expected escape sequence, got end of input");
         }
