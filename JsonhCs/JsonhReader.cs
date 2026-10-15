@@ -262,7 +262,7 @@ public sealed partial class JsonhReader : IDisposable {
                             if (JsonhNumberParserBig.Parse(Token.Value).TryGetError(out Error NumberError, out BigReal Number)) {
                                 return NumberError;
                             }
-                            Element = JsonNode.Parse(Number.ToString())!;
+                            Element = JsonNode.Parse(Number.ToString(CultureInfo.InvariantCulture))!;
                         }
                         else {
                             if (JsonhNumberParser.Parse(Token.Value).TryGetError(out Error NumberError, out double Number)) {
